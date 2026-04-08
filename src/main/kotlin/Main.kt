@@ -9,6 +9,7 @@ import java.awt.Dimension
 import org.koin.core.context.startKoin
 import org.koin.java.KoinJavaComponent.getKoin
 import viewmodel.MainViewModel
+import viewmodel.VideoEditorViewModel
 
 
 fun main() = application {
@@ -16,20 +17,21 @@ fun main() = application {
         modules(appModule)
     }
 
-    val viewModel = getKoin().get<MainViewModel>()
-    val windowState = rememberWindowState(size = DpSize(800.dp, 600.dp))
+    val mainViewModel = getKoin().get<MainViewModel>()
+    val editorViewModel = getKoin().get<VideoEditorViewModel>()
+    val windowState = rememberWindowState(size = DpSize(1280.dp, 780.dp))
 
     Window(
         onCloseRequest = ::exitApplication,
         state = windowState,
-        alwaysOnTop = true,
-        title = "SimpleVideoEditor - Made with Compose for Desktop Wizard",
+        title = "Simple Video Editor",
         icon = null
     ) {
-        window.minimumSize = Dimension(800, 600)
+        window.minimumSize = Dimension(900, 600)
 
         App(
-            viewModel = viewModel
+            mainViewModel = mainViewModel,
+            editorViewModel = editorViewModel
         )
     }
 }
