@@ -11,20 +11,27 @@ class FFmpegService {
         outputPath: String,
         startMs: Long,
         endMs: Long,
+        targetFps: Int? = null,
         onProgress: (String) -> Unit = {}
     ): Boolean = withContext(Dispatchers.IO) {
         val startSecs = startMs / 1000.0
         val durationSecs = (endMs - startMs) / 1000.0
 
-        val cmd = listOf(
-            "ffmpeg", "-y",
-            "-ss", "%.3f".format(startSecs),
-            "-i", inputPath,
-            "-t", "%.3f".format(durationSecs),
-            "-c", "copy",
-            "-avoid_negative_ts", "make_zero",
-            outputPath
-        )
+        val cmd = buildList {
+            add("ffmpeg"); add("-y")
+            add("-ss"); add("%.3f".format(startSecs))
+            add("-i"); add(inputPath)
+            add("-t"); add("%.3f".format(durationSecs))
+            if (targetFps != null) {
+                add("-vf"); add("fps=$targetFps")
+                add("-c:v"); add("libx264")
+                add("-c:a"); add("copy")
+            } else {
+                add("-c"); add("copy")
+            }
+            add("-avoid_negative_ts"); add("make_zero")
+            add(outputPath)
+        }
 
         runCommand(cmd, onProgress)
     }
@@ -67,7 +74,7 @@ class FFmpegService {
             process.waitFor()
 
             val durationRegex = """"duration"\s*:\s*"([\d.]+)"""".toRegex()
-            val fpsRegex = """"r_frame_rate"\s*:\s*"(\d+)/(\d+)"""".toRegex()
+            val fpsRegex = """"avg_frame_rate"\s*:\s*"(\d+)/(\d+)"""".toRegex()
 
             durationRegex.find(output)?.groupValues?.get(1)?.let {
                 result["duration"] = it
@@ -80,7 +87,6 @@ class FFmpegService {
                 }
             }
         } catch (_: Exception) {
-            // ffprobe not available; caller will fall back to vlcj duration
         }
         result
     }
