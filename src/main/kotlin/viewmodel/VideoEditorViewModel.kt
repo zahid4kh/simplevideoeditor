@@ -129,6 +129,10 @@ class VideoEditorViewModel : ViewModel() {
         _uiState.update { it.copy(isTrimMode = !it.isTrimMode) }
     }
 
+    fun setTargetFps(fps: Int?) {
+        _uiState.update { it.copy(targetFps = fps) }
+    }
+
     fun exportTrimmed(outputPath: String) {
         val state = _uiState.value
         val videoFile = state.videoFile ?: return
@@ -140,7 +144,8 @@ class VideoEditorViewModel : ViewModel() {
                 inputPath = videoFile.path,
                 outputPath = outputPath,
                 startMs = state.trimStart,
-                endMs = state.trimEnd
+                endMs = state.trimEnd,
+                targetFps = state.targetFps
             )
 
             _uiState.update {
@@ -170,6 +175,7 @@ class VideoEditorViewModel : ViewModel() {
         val currentPositionMs: Long = 0L,
         val trimStart: Long = 0L,
         val trimEnd: Long = 0L,
+        val targetFps: Int? = null,
         val exportStatus: ExportStatus = ExportStatus.IDLE,
         val exportMessage: String = "",
         val errorMessage: String? = null,
