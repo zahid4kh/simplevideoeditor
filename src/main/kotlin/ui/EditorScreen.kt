@@ -88,10 +88,12 @@ fun EditorScreen(
                     trimStart = uiState.trimStart,
                     trimEnd = uiState.trimEnd,
                     currentPositionMs = uiState.currentPositionMs,
+                    targetFps = uiState.targetFps,
                     onUploadClick = openFileChooser,
                     onToggleTrimMode = editorViewModel::toggleTrimMode,
                     onSetTrimStart = { editorViewModel.setTrimStart(uiState.currentPositionMs) },
                     onSetTrimEnd = { editorViewModel.setTrimEnd(uiState.currentPositionMs) },
+                    onSetTargetFps = editorViewModel::setTargetFps,
                     modifier = Modifier
                         .width(260.dp)
                         .fillMaxHeight()
@@ -241,6 +243,7 @@ private fun EditorTopBar(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LeftPanel(
     videoFile: VideoFile?,
@@ -249,10 +252,12 @@ private fun LeftPanel(
     trimStart: Long,
     trimEnd: Long,
     currentPositionMs: Long,
+    targetFps: Int?,
     onUploadClick: () -> Unit,
     onToggleTrimMode: () -> Unit,
     onSetTrimStart: () -> Unit,
     onSetTrimEnd: () -> Unit,
+    onSetTargetFps: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -301,6 +306,72 @@ private fun LeftPanel(
             "FPS",
             if (videoFile.fps > 0) "%.2f fps".format(videoFile.fps) else "—"
         )
+
+        HorizontalDivider()
+
+        SectionLabel("OUTPUT FPS")
+
+        val presetFps = listOf(25, 30, 60)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            FilterChip(
+                selected = targetFps == null,
+                onClick = { onSetTargetFps(null) },
+                label = { Text("Source", style = MaterialTheme.typography.labelSmall) },
+                modifier = Modifier.weight(1f)
+            )
+            presetFps.forEach { fps ->
+                FilterChip(
+                    selected = targetFps == fps,
+                    onClick = { onSetTargetFps(fps) },
+                    label = { Text("$fps", style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        val sliderFps = (targetFps ?: videoFile.fps.toInt().coerceIn(25, 60)).toFloat()
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "25",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                Text(
+                    if (targetFps != null) "$targetFps fps" else "Source (${if (videoFile.fps > 0) "%.0f".format(videoFile.fps) else "?"})",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (targetFps != null) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+                Text(
+                    "60",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
+            }
+            Slider(
+                value = sliderFps,
+                onValueChange = { onSetTargetFps(it.toInt()) },
+                valueRange = 25f..60f,
+                steps = 34,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (targetFps != null) {
+            Text(
+                "Re-encoding to $targetFps fps (slower export)",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
+        }
 
         HorizontalDivider()
 
