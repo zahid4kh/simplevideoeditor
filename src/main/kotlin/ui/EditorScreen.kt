@@ -1,8 +1,10 @@
 package ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,6 +27,7 @@ import data.ExportStatus
 import data.VideoFile
 import viewmodel.MainViewModel
 import viewmodel.VideoEditorViewModel
+import java.awt.Cursor
 import javax.swing.JFileChooser
 import javax.swing.SwingUtilities
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -32,6 +39,10 @@ fun EditorScreen(
 ) {
     val uiState by editorViewModel.uiState.collectAsState()
     val mainUiState by mainViewModel.uiState.collectAsState()
+
+    var leftPanelWidthDp by remember { mutableStateOf(260.dp) }
+    var isDraggingDivider by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
 
     val openFileChooser: () -> Unit = {
         SwingUtilities.invokeLater {
@@ -95,11 +106,33 @@ fun EditorScreen(
                     onSetTrimEnd = { editorViewModel.setTrimEnd(uiState.currentPositionMs) },
                     onSetTargetFps = editorViewModel::setTargetFps,
                     modifier = Modifier
-                        .width(260.dp)
+                        .width(leftPanelWidthDp)
                         .fillMaxHeight()
                 )
 
-                VerticalDivider(modifier = Modifier.fillMaxHeight())
+                Box(
+                    modifier = Modifier
+                        .width(8.dp)
+                        .fillMaxHeight()
+                        .pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { isDraggingDivider = true },
+                                onDragEnd = { isDraggingDivider = false },
+                                onDragCancel = { isDraggingDivider = false }
+                            ) { change, dragAmount ->
+                                change.consume()
+                                val deltaDp = with(density) { dragAmount.x.toDp() }
+                                leftPanelWidthDp = (leftPanelWidthDp + deltaDp).coerceIn(180.dp, 480.dp)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    VerticalDivider(
+                        color = if (isDraggingDivider) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
 
                 Box(
                     modifier = Modifier
@@ -312,22 +345,21 @@ private fun LeftPanel(
         SectionLabel("OUTPUT FPS")
 
         val presetFps = listOf(25, 30, 60)
-        Row(
+        FlowRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.fillMaxWidth()
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth().animateContentSize()
         ) {
             FilterChip(
                 selected = targetFps == null,
                 onClick = { onSetTargetFps(null) },
-                label = { Text("Source", style = MaterialTheme.typography.labelSmall) },
-                modifier = Modifier.weight(1f)
+                label = { Text("Source", style = MaterialTheme.typography.labelSmall) }
             )
             presetFps.forEach { fps ->
                 FilterChip(
                     selected = targetFps == fps,
                     onClick = { onSetTargetFps(fps) },
-                    label = { Text("$fps", style = MaterialTheme.typography.labelSmall) },
-                    modifier = Modifier.weight(1f)
+                    label = { Text("$fps", style = MaterialTheme.typography.labelSmall) }
                 )
             }
         }
@@ -388,7 +420,8 @@ private fun LeftPanel(
                 1.dp,
                 if (isTrimMode) MaterialTheme.colorScheme.tertiary
                 else MaterialTheme.colorScheme.outline
-            )
+            ),
+            shape = MaterialTheme.shapes.medium,
         ) {
             Icon(Icons.Default.ContentCut, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(8.dp))
