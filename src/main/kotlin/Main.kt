@@ -8,7 +8,6 @@ import di.appModule
 import java.awt.Dimension
 import org.koin.core.context.startKoin
 import org.koin.java.KoinJavaComponent.getKoin
-import moe.tlaster.precompose.ProvidePreComposeLocals
 import viewmodel.MainViewModel
 
 

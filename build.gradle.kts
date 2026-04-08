@@ -37,6 +37,8 @@ dependencies {
 
     // Deskit - for Material3 file chooser and information dialogs
     implementation(libs.deskit)
+
+    implementation(libs.vlcj)
 }
 
 
