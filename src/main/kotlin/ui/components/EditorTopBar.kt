@@ -19,6 +19,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import data.ExportStatus
 
@@ -40,7 +42,7 @@ fun EditorTopBar(
             )
         },
         actions = {
-            IconButton(onClick = onToggleDarkMode) {
+            IconButton(onClick = onToggleDarkMode, modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)) {
                 Icon(
                     imageVector = if (darkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
                     contentDescription = "Toggle theme"
@@ -51,7 +53,10 @@ fun EditorTopBar(
                 Button(
                     onClick = onExport,
                     enabled = !isExporting,
-                    modifier = Modifier.padding(end = 12.dp)
+                    modifier = Modifier
+                        .padding(end = 12.dp)
+                        .pointerHoverIcon(PointerIcon.Hand),
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     if (isExporting) {
                         CircularProgressIndicator(

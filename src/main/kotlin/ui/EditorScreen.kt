@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import data.ExportStatus
 import data.VideoFile
+import deskit.dialogs.file.filechooser.FileChooserDialog
+import deskit.dialogs.file.filesaver.FileSaverDialog
 import ui.components.EditorTopBar
 import ui.components.EmptyVideoState
 import ui.components.LeftPanel
@@ -34,9 +36,6 @@ import ui.components.PlaybackControls
 import viewmodel.MainViewModel
 import viewmodel.VideoEditorViewModel
 import java.awt.Cursor
-import javax.swing.JFileChooser
-import javax.swing.SwingUtilities
-import javax.swing.filechooser.FileNameExtensionFilter
 
 @Composable
 fun EditorScreen(
@@ -50,36 +49,8 @@ fun EditorScreen(
     var isDraggingDivider by remember { mutableStateOf(false) }
     val density = LocalDensity.current
 
-    val openFileChooser: () -> Unit = {
-        SwingUtilities.invokeLater {
-            val chooser = JFileChooser().apply {
-                fileFilter = FileNameExtensionFilter("MP4 Videos (*.mp4)", "mp4", "MP4")
-                dialogTitle = "Select MP4 Video"
-                fileSelectionMode = JFileChooser.FILES_ONLY
-            }
-            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                editorViewModel.loadVideo(chooser.selectedFile.absolutePath)
-            }
-        }
-    }
-
-    val openSaveDialog: () -> Unit = saveDialog@{
-        val videoFile = uiState.videoFile ?: return@saveDialog
-        SwingUtilities.invokeLater {
-            val default = videoFile.name.removeSuffix(".mp4").removeSuffix(".MP4") + "_export.mp4"
-            val chooser = JFileChooser().apply {
-                fileFilter = FileNameExtensionFilter("MP4 Videos (*.mp4)", "mp4")
-                dialogTitle = "Save Exported Video"
-                selectedFile = java.io.File(videoFile.path).parentFile?.let { java.io.File(it, default) }
-                    ?: java.io.File(default)
-            }
-            if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-                var path = chooser.selectedFile.absolutePath
-                if (!path.endsWith(".mp4", ignoreCase = true)) path += ".mp4"
-                editorViewModel.exportTrimmed(path)
-            }
-        }
-    }
+    val openFileChooser: () -> Unit = editorViewModel::openFileChooser
+    val openSaveDialog: () -> Unit = editorViewModel::openFileSaver
 
     Scaffold(
         topBar = {
@@ -228,6 +199,34 @@ fun EditorScreen(
             confirmButton = {
                 TextButton(onClick = editorViewModel::dismissExportStatus) { Text("OK") }
             }
+        )
+    }
+
+    if (uiState.showFileChooser) {
+        FileChooserDialog(
+            title = "Select MP4 Video",
+            allowedExtensions = listOf("mp4"),
+            resizableFileInfoDialog = true,
+            onFileSelected = { file -> editorViewModel.loadVideo(file.absolutePath) },
+            onCancel = editorViewModel::closeFileChooser
+        )
+    }
+
+    if (uiState.showFileSaver) {
+        val videoFile = uiState.videoFile
+        val suggestedName = videoFile?.name
+            ?.removeSuffix(".mp4")
+            ?.removeSuffix(".MP4")
+            ?.plus("_export") ?: "export"
+        FileSaverDialog(
+            title = "Save Exported Video",
+            startDirectory = videoFile?.path?.let { java.io.File(it).parentFile }
+                ?: java.io.File(System.getProperty("user.home") + "/Downloads"),
+            suggestedFileName = suggestedName,
+            extension = ".mp4",
+            resizableFileInfoDialog = true,
+            onSave = { file -> editorViewModel.exportTrimmed(file.absolutePath) },
+            onCancel = editorViewModel::closeFileSaver
         )
     }
 }

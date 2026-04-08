@@ -16,6 +16,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 
 
@@ -32,13 +34,15 @@ fun PlaybackControls(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onRewind) {
+        IconButton(onClick = onRewind, modifier = Modifier.pointerHoverIcon(PointerIcon.Hand) ) {
             Icon(Icons.Default.SkipPrevious, contentDescription = "Rewind to start")
         }
         Spacer(Modifier.width(8.dp))
         FilledIconButton(
             onClick = onPlayPause,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier
+                .size(48.dp)
+                .pointerHoverIcon(PointerIcon.Hand)
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -47,7 +51,7 @@ fun PlaybackControls(
             )
         }
         Spacer(Modifier.width(8.dp))
-        IconButton(onClick = onSkipEnd) {
+        IconButton(onClick = onSkipEnd, modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)) {
             Icon(Icons.Default.SkipNext, contentDescription = "Skip to end")
         }
     }

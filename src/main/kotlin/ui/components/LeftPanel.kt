@@ -77,7 +77,9 @@ fun LeftPanel(
         ) {
             Button(
                 onClick = onUploadClick,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerHoverIcon(PointerIcon.Hand),
                 contentPadding = PaddingValues(vertical = 10.dp),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -171,7 +173,9 @@ fun LeftPanel(
                     onValueChange = { onSetTargetFps(it.toInt()) },
                     valueRange = 25f..60f,
                     steps = 34,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerHoverIcon(PointerIcon.Hand)
                 )
             }
 
@@ -189,7 +193,9 @@ fun LeftPanel(
 
             OutlinedButton(
                 onClick = onToggleTrimMode,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerHoverIcon(PointerIcon.Hand),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = if (isTrimMode) MaterialTheme.colorScheme.tertiary
                     else MaterialTheme.colorScheme.onSurface
