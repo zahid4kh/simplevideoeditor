@@ -79,99 +79,49 @@ fun AppTheme(
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    val robotoFontFamily = getRobotoFamily()
+    val jetbrainsMonoFamily = getJetbrainsMonoFamily()
 
-    val ubuntuFontFamily = getUbuntuFamily()
-
-    val ubuntuType = Typography(
+    val typography = Typography(
         headlineLarge = TextStyle(
-            fontFamily = ubuntuFontFamily,
+            fontFamily = jetbrainsMonoFamily,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 32.sp,
         ),
         bodyLarge = TextStyle(
-            fontFamily = ubuntuFontFamily,
+            fontFamily = jetbrainsMonoFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 16.sp,
             lineHeight = 24.sp,
             letterSpacing = 0.5.sp
         ),
         titleLarge = TextStyle(
-            fontFamily = ubuntuFontFamily,
+            fontFamily = jetbrainsMonoFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 22.sp,
             lineHeight = 28.sp,
             letterSpacing = 0.sp
         ),
         titleMedium = TextStyle(
-            fontFamily = ubuntuFontFamily,
+            fontFamily = jetbrainsMonoFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 20.sp,
         ),
         labelSmall = TextStyle(
-            fontFamily = ubuntuFontFamily,
+            fontFamily = jetbrainsMonoFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 11.sp,
             lineHeight = 16.sp,
             letterSpacing = 0.5.sp
         ),
         labelMedium = TextStyle(
-            fontFamily = ubuntuFontFamily,
+            fontFamily = jetbrainsMonoFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 14.sp,
             lineHeight = 16.sp,
             letterSpacing = 0.25.sp
         ),
         bodyMedium = TextStyle(
-            fontFamily = ubuntuFontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
-            letterSpacing = 0.25.sp
-        )
-    )
-
-    val robotoType = Typography(
-        headlineLarge = TextStyle(
-            fontFamily = robotoFontFamily,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 32.sp,
-        ),
-        bodyLarge = TextStyle(
-            fontFamily = robotoFontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
-            letterSpacing = 0.5.sp
-        ),
-        titleLarge = TextStyle(
-            fontFamily = robotoFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 22.sp,
-            lineHeight = 28.sp,
-            letterSpacing = 0.sp
-        ),
-        titleMedium = TextStyle(
-            fontFamily = robotoFontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 20.sp,
-        ),
-        labelSmall = TextStyle(
-            fontFamily = robotoFontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.sp,
-            lineHeight = 16.sp,
-            letterSpacing = 0.5.sp
-        ),
-        labelMedium = TextStyle(
-            fontFamily = robotoFontFamily,
-            fontWeight = FontWeight.Normal,
-            fontSize = 14.sp,
-            lineHeight = 16.sp,
-            letterSpacing = 0.25.sp
-        ),
-        bodyMedium = TextStyle(
-            fontFamily = robotoFontFamily,
+            fontFamily = jetbrainsMonoFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 14.sp,
             lineHeight = 20.sp,
@@ -181,29 +131,9 @@ fun AppTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = if (System.getProperty("os.name").lowercase() == "linux") ubuntuType else robotoType,
+        typography = typography,
         content = content
     )
-}
-
-@Composable
-fun getRobotoFamily(): FontFamily{
-    val robotoFontFamily = FontFamily(
-        Font(resource = Res.font.Roboto_Regular, weight = FontWeight.Normal, style = FontStyle.Normal),
-        Font(resource = Res.font.Roboto_Italic, weight = FontWeight.Normal, style = FontStyle.Italic),
-        Font(resource = Res.font.Roboto_Bold, weight = FontWeight.Bold, style = FontStyle.Normal)
-    )
-    return robotoFontFamily
-}
-
-@Composable
-fun getUbuntuFamily(): FontFamily{
-    val ubuntuFontFamily = FontFamily(
-        Font(resource = Res.font.Ubuntu_Regular, weight = FontWeight.Normal, style = FontStyle.Normal),
-        Font(resource = Res.font.Ubuntu_Italic, weight = FontWeight.Normal, style = FontStyle.Italic),
-        Font(resource = Res.font.Ubuntu_Bold, weight = FontWeight.Bold, style = FontStyle.Normal)
-    )
-    return ubuntuFontFamily
 }
 
 @Composable
