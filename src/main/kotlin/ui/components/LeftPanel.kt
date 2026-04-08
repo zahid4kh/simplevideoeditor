@@ -35,12 +35,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import data.VideoFile
-import ui.MetadataRow
-import ui.SectionLabel
 import ui.formatTimeMs
 
 
@@ -121,13 +121,15 @@ fun LeftPanel(
             FilterChip(
                 selected = targetFps == null,
                 onClick = { onSetTargetFps(null) },
-                label = { Text("Source", style = MaterialTheme.typography.labelSmall) }
+                label = { Text("Source", style = MaterialTheme.typography.labelSmall) },
+                modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
             )
             presetFps.forEach { fps ->
                 FilterChip(
                     selected = targetFps == fps,
                     onClick = { onSetTargetFps(fps) },
-                    label = { Text("$fps", style = MaterialTheme.typography.labelSmall) }
+                    label = { Text("$fps", style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.pointerHoverIcon(PointerIcon.Hand)
                 )
             }
         }
