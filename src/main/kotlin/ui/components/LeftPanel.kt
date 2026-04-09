@@ -25,6 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,11 +61,13 @@ fun LeftPanel(
     trimEnd: Long,
     currentPositionMs: Long,
     targetFps: Int?,
+    isMuted: Boolean,
     onUploadClick: () -> Unit,
     onToggleTrimMode: () -> Unit,
     onSetTrimStart: () -> Unit,
     onSetTrimEnd: () -> Unit,
     onSetTargetFps: (Int?) -> Unit,
+    onToggleMute: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -285,11 +289,43 @@ fun LeftPanel(
                     )
                 }
             }
+
+            HorizontalDivider()
+
+            SectionLabel("AUDIO")
+
+            OutlinedButton(
+                onClick = onToggleMute,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerHoverIcon(PointerIcon.Hand),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = if (isMuted) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurface
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    if (isMuted) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.outline
+                ),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Icon(
+                    if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(if (isMuted) "Muted (export silent)" else "Mute Audio")
+            }
         }
 
         VerticalScrollbar(
             adapter = rememberScrollbarAdapter(scrollState = scrollState),
-            style = LocalScrollbarStyle.current,
+            style = LocalScrollbarStyle.current.copy(
+                hoverColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                unhoverColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            ),
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .pointerHoverIcon(PointerIcon.Hand)

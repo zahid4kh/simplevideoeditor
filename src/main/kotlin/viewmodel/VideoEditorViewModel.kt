@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import data.ExportStatus
 import data.VideoFile
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -133,6 +134,10 @@ class VideoEditorViewModel : ViewModel() {
         _uiState.update { it.copy(targetFps = fps) }
     }
 
+    fun toggleMute() {
+        _uiState.update { it.copy(isMuted = !it.isMuted) }
+    }
+
     fun exportTrimmed() {
         val state = _uiState.value
         val videoFile = state.videoFile ?: return
@@ -150,7 +155,8 @@ class VideoEditorViewModel : ViewModel() {
                 outputPath = outputPath,
                 startMs = state.trimStart,
                 endMs = state.trimEnd,
-                targetFps = state.targetFps
+                targetFps = state.targetFps,
+                muteAudio = state.isMuted
             )
 
             _uiState.update {
@@ -159,6 +165,9 @@ class VideoEditorViewModel : ViewModel() {
                     exportMessage = if (success) "Saved to $outputPath" else "Export failed. Make sure FFmpeg is installed."
                 )
             }
+
+            delay(3000)
+            dismissExportStatus()
         }
     }
 
@@ -194,6 +203,7 @@ class VideoEditorViewModel : ViewModel() {
         val errorMessage: String? = null,
         val isLoading: Boolean = false,
         val isTrimMode: Boolean = false,
+        val isMuted: Boolean = false,
         val showFileChooser: Boolean = false
     )
 }

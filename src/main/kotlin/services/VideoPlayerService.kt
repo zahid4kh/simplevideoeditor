@@ -49,6 +49,10 @@ class VideoPlayerService {
         mediaPlayerComponent?.mediaPlayer()?.audio()?.setVolume(volume.coerceIn(0, 200))
     }
 
+    fun setMute(muted: Boolean) {
+        mediaPlayerComponent?.mediaPlayer()?.audio()?.isMute = muted
+    }
+
     fun release() {
         mediaPlayerComponent?.mediaPlayer()?.release()
         mediaPlayerComponent = null

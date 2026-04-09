@@ -21,7 +21,8 @@ fun VideoPlayerComponent(
     videoPath: String,
     viewModel: VideoEditorViewModel,
     modifier: Modifier = Modifier,
-    showSurface: Boolean = true
+    showSurface: Boolean = true,
+    isMuted: Boolean = false
 ) {
     var initError by remember { mutableStateOf<String?>(null) }
     val playerService = remember { VideoPlayerService() }
@@ -38,9 +39,12 @@ fun VideoPlayerComponent(
         initError?.let { viewModel.reportError(it) }
     }
 
-    // Loading new media whenever the path changes; no VLC teardown/reinit
     LaunchedEffect(videoPath) {
         playerService.loadMedia(videoPath)
+    }
+
+    LaunchedEffect(isMuted) {
+        playerService.setMute(isMuted)
     }
 
     LaunchedEffect(mediaPlayerComponent) {

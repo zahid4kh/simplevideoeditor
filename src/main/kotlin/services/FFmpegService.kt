@@ -12,6 +12,7 @@ class FFmpegService {
         startMs: Long,
         endMs: Long,
         targetFps: Int? = null,
+        muteAudio: Boolean = false,
         onProgress: (String) -> Unit = {}
     ): Boolean = withContext(Dispatchers.IO) {
         val startSecs = startMs / 1000.0
@@ -25,9 +26,10 @@ class FFmpegService {
             if (targetFps != null) {
                 add("-vf"); add("fps=$targetFps")
                 add("-c:v"); add("libx264")
-                add("-c:a"); add("copy")
+                if (muteAudio) add("-an") else { add("-c:a"); add("copy") }
             } else {
-                add("-c"); add("copy")
+                if (muteAudio) { add("-c:v"); add("copy"); add("-an") }
+                else { add("-c"); add("copy") }
             }
             add("-avoid_negative_ts"); add("make_zero")
             add(outputPath)

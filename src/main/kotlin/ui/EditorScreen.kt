@@ -1,16 +1,9 @@
 package ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -22,12 +15,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import data.ExportStatus
-import data.VideoFile
 import deskit.dialogs.file.filechooser.FileChooserDialog
 import ui.components.EditorTopBar
 import ui.components.EmptyVideoState
@@ -51,13 +39,7 @@ fun EditorScreen(
 
     val openFileChooser: () -> Unit = editorViewModel::openFileChooser
 
-    // Only in-window Compose AlertDialogs need the SwingPanel hidden (AWT airspace fix).
-    // FileChooserDialog opens as its own OS window so it naturally stacks above VLC — don't
-    // hide the surface for it, or removing the heavyweight component while VLC is rendering
-    // will block the EDT and freeze the UI.
-    val hideVideoSurface = uiState.errorMessage != null ||
-        uiState.exportStatus == ExportStatus.SUCCESS ||
-        uiState.exportStatus == ExportStatus.ERROR
+    val hideVideoSurface = uiState.errorMessage != null
 
     Scaffold(
         topBar = {
@@ -84,11 +66,13 @@ fun EditorScreen(
                     trimEnd = uiState.trimEnd,
                     currentPositionMs = uiState.currentPositionMs,
                     targetFps = uiState.targetFps,
+                    isMuted = uiState.isMuted,
                     onUploadClick = openFileChooser,
                     onToggleTrimMode = editorViewModel::toggleTrimMode,
                     onSetTrimStart = { editorViewModel.setTrimStart(uiState.currentPositionMs) },
                     onSetTrimEnd = { editorViewModel.setTrimEnd(uiState.currentPositionMs) },
                     onSetTargetFps = editorViewModel::setTargetFps,
+                    onToggleMute = editorViewModel::toggleMute,
                     modifier = Modifier
                         .width(leftPanelWidthDp)
                         .fillMaxHeight()
@@ -126,17 +110,14 @@ fun EditorScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     if (uiState.videoFile != null) {
-                        // Keep player surface alive during reload — removing a native AWT
-                        // heavyweight surface while VLC is rendering blocks the EDT and freezes the UI.
-                        // The old video stays visible until VLC loads the new media.
                         VideoPlayerComponent(
                             videoPath = uiState.videoFile!!.path,
                             viewModel = editorViewModel,
                             modifier = Modifier.fillMaxSize(),
-                            showSurface = !hideVideoSurface
+                            showSurface = !hideVideoSurface,
+                            isMuted = uiState.isMuted
                         )
                     } else if (uiState.isLoading) {
-                        // First-ever load: no video mounted yet, show spinner
                         CircularProgressIndicator(color = Color.White)
                     } else {
                         EmptyVideoState(onUpload = openFileChooser)
@@ -188,38 +169,6 @@ fun EditorScreen(
             confirmButton = {
                 TextButton(onClick = editorViewModel::dismissError) { Text("OK") }
             }
-        )
-    }
-
-    if (uiState.exportStatus == ExportStatus.SUCCESS || uiState.exportStatus == ExportStatus.ERROR) {
-        AlertDialog(
-            onDismissRequest = editorViewModel::dismissExportStatus,
-            icon = {
-                Icon(
-                    if (uiState.exportStatus == ExportStatus.SUCCESS) Icons.Default.CheckCircle
-                    else Icons.Default.Error,
-                    contentDescription = null,
-                    tint = if (uiState.exportStatus == ExportStatus.SUCCESS)
-                        MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.error
-                )
-            },
-            title = {
-                Text(if (uiState.exportStatus == ExportStatus.SUCCESS) "Export Complete" else "Export Failed")
-            },
-            text = { Text(uiState.exportMessage) },
-            confirmButton = {
-                TextButton(onClick = editorViewModel::dismissExportStatus) { Text("OK") }
-            },
-            containerColor = MaterialTheme.colorScheme.surface,
-            textContentColor = MaterialTheme.colorScheme.onSurface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            shape = MaterialTheme.shapes.extraLarge,
-            modifier = Modifier.border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline,
-                shape = MaterialTheme.shapes.extraLarge
-            )
         )
     }
 

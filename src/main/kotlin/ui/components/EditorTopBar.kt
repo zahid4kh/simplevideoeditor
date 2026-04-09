@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,25 +53,51 @@ fun EditorTopBar(
             }
             if (hasVideo) {
                 val isExporting = exportStatus == ExportStatus.RUNNING
+                val isSuccess = exportStatus == ExportStatus.SUCCESS
+                val isError = exportStatus == ExportStatus.ERROR
                 Button(
                     onClick = onExport,
                     enabled = !isExporting,
                     modifier = Modifier
                         .padding(end = 12.dp)
                         .pointerHoverIcon(PointerIcon.Hand),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    if (isExporting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
+                    shape = MaterialTheme.shapes.medium,
+                    colors = when {
+                        isSuccess -> ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
                         )
-                    } else {
-                        Icon(Icons.Default.Download, contentDescription = null)
+                        isError -> ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                        else -> ButtonDefaults.buttonColors()
                     }
-                    Spacer(Modifier.width(6.dp))
-                    Text(if (isExporting) "Exporting…" else "Export")
+                ) {
+                    when {
+                        isExporting -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Exporting…")
+                        }
+                        isSuccess -> {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Saved!")
+                        }
+                        isError -> {
+                            Icon(Icons.Default.Error, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Export Failed")
+                        }
+                        else -> {
+                            Icon(Icons.Default.Download, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Export")
+                        }
+                    }
                 }
             }
         },
