@@ -1,68 +1,113 @@
 # SimpleVideoEditor
 
-A desktop application built with Kotlin and Compose for Desktop.
+A lightweight, modern desktop video editor built with **Kotlin** and **Compose Multiplatform**. It provides a simple interface for trimming videos and adjusting frame rates, powered by **FFmpeg**.
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21-blue.svg?logo=kotlin)](https://kotlinlang.org) [![Compose](https://img.shields.io/badge/Compose-1.9.3-blue.svg?logo=jetpack-compose)](https://www.jetbrains.com/lp/compose-multiplatform/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.21-blue.svg?logo=kotlin)](https://kotlinlang.org) 
+[![Compose](https://img.shields.io/badge/Compose-1.10.0-blue.svg?logo=jetpack-compose)](https://www.jetbrains.com/lp/compose-multiplatform/)
+[![Material 3](https://img.shields.io/badge/Material--3-latest-green.svg)](https://m3.material.io/)
 
-## Features
+---
 
-- Modern UI with Material 3 design
-- Dark mode support
-- Cross-platform (Windows, macOS, Linux)
+## 🚀 Features
 
-## Development Setup
+- **🎬 Video Trimming:** Easily set start and end points using a visual timeline or precise buttons.
+- **⚡ FPS Control:** Change the target frame rate (FPS) for your exported video clips.
+- **📊 Metadata Extraction:** Automatically see video duration, current frame rate, and other details upon loading.
+- **📽️ Real-time Preview:** Integrated video player for scrubbing and previewing edits.
+- **🎨 Modern UI:** Sleek Material 3 design with full **Dark Mode** support.
+- **📏 Flexible Layout:** Resizable side panels and responsive components.
+- **📦 Multi-platform:** Native distributions for Windows (.msi, .exe) and Linux (.deb).
 
-### Prerequisites
+---
 
-- JDK 17 or later
-- Kotlin 2.2.21 or later
-- IntelliJ IDEA (recommended) or Android Studio
+## 🛠️ Prerequisites
 
-### Make Gradle Wrapper Executable (Linux/macOS only)
+To run or build this application, ensure you have the following installed on your system:
 
-After cloning the repository, you need to make the Gradle wrapper executable:
+### For Users (Running the App)
+1.  **[VLC Media Player](https://www.videolan.org/vlc/):** Required for video playback (uses `vlcj`).
+2.  **[FFmpeg](https://ffmpeg.org/download.html):** Must be installed and available in your system's `PATH`. The app uses `ffmpeg` for trimming and `ffprobe` for metadata extraction.
 
+### For Developers
+- **JDK 17** or later.
+- **IntelliJ IDEA** (Recommended).
+
+---
+
+## 📥 Installation & Download
+
+### Windows
+1.  Download the `.msi` or `.exe` from the [Releases](https://github.com/zahid4kh/simplevideoeditor/releases) page.
+2.  Run the installer and follow the instructions.
+3.  **Note:** Ensure VLC and FFmpeg are installed on your system.
+
+### Linux (Debian/Ubuntu)
+1.  Download the `.deb` package.
+2.  Install it using:
+
+```bash
+sudo dpkg -i simplevideoeditor.deb
+```
+
+---
+
+## 💻 Development
+
+### Clone the Repository
+```bash
+git clone https://github.com/zahid4kh/simplevideoeditor.git
+cd simplevideoeditor
+```
+
+### Make Gradle Wrapper Executable (Linux/macOS)
 ```bash
 chmod +x gradlew
 ```
 
-**Note:** This step is not required on Windows as it uses `gradlew.bat`.
-
 ### Running the Application
-
-#### Standard Run
 ```bash
 ./gradlew run
 ```
 
-#### Hot Reload (Recommended for Development)
+### Hot Reload (Recommended for Development)
 ```bash
 ./gradlew :hotRun --mainClass SimpleVideoEditor --auto
 ```
 
-This enables automatic recompilation and hot swapping when you modify your code, making development much faster.
+### Building Distributions
 
-### Building a Native Distribution
+| Platform | Command | Output Format |
+| :--- | :--- | :--- |
+| **Current OS** | `./gradlew packageDistributionForCurrentOS` | Native Installer |
+| **Windows** | `./gradlew packageMsi` / `packageExe` | .msi / .exe |
+| **macOS** | `./gradlew packageDmg` | .dmg |
+| **Linux** | `./gradlew packageDeb` | .deb |
 
-To build a native distribution for your platform:
-
+*For Linux users, a custom task is available to fix the Taskbar icon:*
 ```bash
-./gradlew packageDistributionForCurrentOS
+./gradlew packageDebWithWMClass
 ```
 
-This will create a platform-specific installer in the `build/compose/binaries/main-release/{extension}/` directory.
+---
 
-### Available Gradle Tasks
+## 🏗️ Tech Stack
 
-- `./gradlew run` - Run the application
-- `./gradlew :hotRun --mainClass SimpleVideoEditor --auto` - Run with hot reload
-- `./gradlew packageDistributionForCurrentOS` - Build native distribution for current OS
-- `./gradlew packageDmg` - Build macOS DMG (macOS only)
-- `./gradlew packageMsi` - Build Windows MSI (Windows only)
-- `./gradlew packageExe` - Build Windows EXE (Windows only)
-- `./gradlew packageDeb` - Build Linux DEB (Linux only)
+- **UI Framework:** [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) (Desktop)
+- **Dependency Injection:** [Koin](https://insert-koin.io/)
+- **Video Playback:** [vlcj](https://github.com/caprica/vlcj) (VLC binding)
+- **Video Processing:** [FFmpeg](https://ffmpeg.org/) (via CLI)
+- **State Management:** Kotlin Coroutines & Flow
+- **Components:** [Deskit](https://github.com/zahid4kh/deskit) (Material 3 Dialogs & File Choosers)
 
+---
 
-## Generated with Compose for Desktop Wizard
+## 🤝 Contributing
 
-This project was generated using the [Desktop Client of Compose for Desktop Wizard](https://github.com/zahid4kh/compose-for-desktop/tree/desktop).
+Contributions are welcome! Feel free to open issues or submit pull requests.
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+---
+*Generated with [Compose for Desktop Wizard](https://github.com/zahid4kh/compose-for-desktop/tree/desktop).*
