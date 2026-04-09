@@ -133,12 +133,17 @@ class VideoEditorViewModel : ViewModel() {
         _uiState.update { it.copy(targetFps = fps) }
     }
 
-    fun exportTrimmed(outputPath: String) {
+    fun exportTrimmed() {
         val state = _uiState.value
         val videoFile = state.videoFile ?: return
 
+        val inputFile = File(videoFile.path)
+        val baseName = inputFile.nameWithoutExtension
+        val outputFileName = "${baseName}_${System.currentTimeMillis()}.mp4"
+        val outputPath = File(inputFile.parentFile, outputFileName).absolutePath
+
         viewModelScope.launch {
-            _uiState.update { it.copy(exportStatus = ExportStatus.RUNNING, exportMessage = "Exporting…", showFileSaver = false) }
+            _uiState.update { it.copy(exportStatus = ExportStatus.RUNNING, exportMessage = "Exporting…") }
 
             val success = ffmpegService.trimVideo(
                 inputPath = videoFile.path,
@@ -177,15 +182,6 @@ class VideoEditorViewModel : ViewModel() {
         _uiState.update { it.copy(showFileChooser = false) }
     }
 
-    fun openFileSaver() {
-        if (_uiState.value.videoFile == null) return
-        _uiState.update { it.copy(showFileSaver = true) }
-    }
-
-    fun closeFileSaver() {
-        _uiState.update { it.copy(showFileSaver = false) }
-    }
-
     data class EditorUiState(
         val videoFile: VideoFile? = null,
         val isPlaying: Boolean = false,
@@ -198,7 +194,6 @@ class VideoEditorViewModel : ViewModel() {
         val errorMessage: String? = null,
         val isLoading: Boolean = false,
         val isTrimMode: Boolean = false,
-        val showFileChooser: Boolean = false,
-        val showFileSaver: Boolean = false
+        val showFileChooser: Boolean = false
     )
 }

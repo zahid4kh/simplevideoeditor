@@ -20,7 +20,8 @@ import kotlin.time.Duration.Companion.milliseconds
 fun VideoPlayerComponent(
     videoPath: String,
     viewModel: VideoEditorViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showSurface: Boolean = true
 ) {
     var initError by remember(videoPath) { mutableStateOf<String?>(null) }
     val playerService = remember(videoPath) { VideoPlayerService() }
@@ -71,7 +72,7 @@ fun VideoPlayerComponent(
         onDispose { playerService.release() }
     }
 
-    if (mediaPlayerComponent != null) {
+    if (mediaPlayerComponent != null && showSurface) {
         SwingPanel(
             background = Color.Black,
             modifier = modifier,
@@ -82,7 +83,9 @@ fun VideoPlayerComponent(
             modifier = modifier.background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            Text("Failed to initialize player", color = Color.White.copy(alpha = 0.6f))
+            if (mediaPlayerComponent == null) {
+                Text("Failed to initialize player", color = Color.White.copy(alpha = 0.6f))
+            }
         }
     }
 }

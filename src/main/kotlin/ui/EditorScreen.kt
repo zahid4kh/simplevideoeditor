@@ -5,6 +5,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -28,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import data.ExportStatus
 import data.VideoFile
 import deskit.dialogs.file.filechooser.FileChooserDialog
-import deskit.dialogs.file.filesaver.FileSaverDialog
 import ui.components.EditorTopBar
 import ui.components.EmptyVideoState
 import ui.components.LeftPanel
@@ -50,7 +50,11 @@ fun EditorScreen(
     val density = LocalDensity.current
 
     val openFileChooser: () -> Unit = editorViewModel::openFileChooser
-    val openSaveDialog: () -> Unit = editorViewModel::openFileSaver
+
+    val isAnyDialogOpen = uiState.errorMessage != null ||
+        uiState.exportStatus == ExportStatus.SUCCESS ||
+        uiState.exportStatus == ExportStatus.ERROR ||
+        uiState.showFileChooser
 
     Scaffold(
         topBar = {
@@ -59,7 +63,7 @@ fun EditorScreen(
                 onToggleDarkMode = mainViewModel::toggleDarkMode,
                 hasVideo = uiState.videoFile != null,
                 exportStatus = uiState.exportStatus,
-                onExport = openSaveDialog
+                onExport = editorViewModel::exportTrimmed
             )
         }
     ) { padding ->
@@ -124,7 +128,8 @@ fun EditorScreen(
                         VideoPlayerComponent(
                             videoPath = uiState.videoFile!!.path,
                             viewModel = editorViewModel,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            showSurface = !isAnyDialogOpen
                         )
                     } else {
                         EmptyVideoState(onUpload = openFileChooser)
@@ -198,7 +203,16 @@ fun EditorScreen(
             text = { Text(uiState.exportMessage) },
             confirmButton = {
                 TextButton(onClick = editorViewModel::dismissExportStatus) { Text("OK") }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            textContentColor = MaterialTheme.colorScheme.onSurface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            shape = MaterialTheme.shapes.extraLarge,
+            modifier = Modifier.border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = MaterialTheme.shapes.extraLarge
+            )
         )
     }
 
@@ -212,21 +226,4 @@ fun EditorScreen(
         )
     }
 
-    if (uiState.showFileSaver) {
-        val videoFile = uiState.videoFile
-        val suggestedName = videoFile?.name
-            ?.removeSuffix(".mp4")
-            ?.removeSuffix(".MP4")
-            ?.plus("_export") ?: "export"
-        FileSaverDialog(
-            title = "Save Exported Video",
-            startDirectory = videoFile?.path?.let { java.io.File(it).parentFile }
-                ?: java.io.File(System.getProperty("user.home") + "/Downloads"),
-            suggestedFileName = suggestedName,
-            extension = ".mp4",
-            resizableFileInfoDialog = true,
-            onSave = { file -> editorViewModel.exportTrimmed(file.absolutePath) },
-            onCancel = editorViewModel::closeFileSaver
-        )
-    }
 }
