@@ -174,8 +174,8 @@ fun EditorScreen(
 
     if (uiState.showFileChooser) {
         FileChooserDialog(
-            title = "Select MP4 Video",
-            allowedExtensions = listOf("mp4"),
+            title = "Select Video (MP4 or WebM)",
+            allowedExtensions = listOf("mp4", "webm"),
             resizableFileInfoDialog = true,
             onFileSelected = { file -> editorViewModel.loadVideo(file.absolutePath) },
             onCancel = editorViewModel::closeFileChooser

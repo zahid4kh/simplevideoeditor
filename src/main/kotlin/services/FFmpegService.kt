@@ -18,6 +18,8 @@ class FFmpegService {
         val startSecs = startMs / 1000.0
         val durationSecs = (endMs - startMs) / 1000.0
 
+        val isWebm = outputPath.endsWith(".webm", ignoreCase = true)
+
         val cmd = buildList {
             add("ffmpeg"); add("-y")
             add("-ss"); add("%.3f".format(startSecs))
@@ -25,7 +27,7 @@ class FFmpegService {
             add("-t"); add("%.3f".format(durationSecs))
             if (targetFps != null) {
                 add("-vf"); add("fps=$targetFps")
-                add("-c:v"); add("libx264")
+                add("-c:v"); add(if (isWebm) "libvpx-vp9" else "libx264")
                 if (muteAudio) add("-an") else { add("-c:a"); add("copy") }
             } else {
                 if (muteAudio) { add("-c:v"); add("copy"); add("-an") }
@@ -76,18 +78,23 @@ class FFmpegService {
             process.waitFor()
 
             val durationRegex = """"duration"\s*:\s*"([\d.]+)"""".toRegex()
-            val fpsRegex = """"avg_frame_rate"\s*:\s*"(\d+)/(\d+)"""".toRegex()
+            val avgFpsRegex = """"avg_frame_rate"\s*:\s*"(\d+)/(\d+)"""".toRegex()
+            val realFpsRegex = """"r_frame_rate"\s*:\s*"(\d+)/(\d+)"""".toRegex()
 
             durationRegex.find(output)?.groupValues?.get(1)?.let {
                 result["duration"] = it
             }
-            fpsRegex.find(output)?.groupValues?.let { groups ->
-                if (groups.size >= 3) {
-                    val num = groups[1].toDoubleOrNull() ?: 0.0
-                    val den = groups[2].toDoubleOrNull() ?: 1.0
-                    if (den != 0.0) result["fps"] = (num / den).toString()
-                }
+
+            fun parseRate(regex: Regex): Double? {
+                val groups = regex.find(output)?.groupValues ?: return null
+                val num = groups[1].toDoubleOrNull() ?: return null
+                val den = groups[2].toDoubleOrNull()?.takeIf { it != 0.0 } ?: return null
+                val fps = num / den
+                return if (fps in 1.0..300.0) fps else null
             }
+
+            val fps = parseRate(avgFpsRegex) ?: parseRate(realFpsRegex)
+            if (fps != null) result["fps"] = fps.toString()
         } catch (_: Exception) {
         }
         result

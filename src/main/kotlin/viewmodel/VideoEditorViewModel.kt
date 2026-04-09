@@ -144,7 +144,8 @@ class VideoEditorViewModel : ViewModel() {
 
         val inputFile = File(videoFile.path)
         val baseName = inputFile.nameWithoutExtension
-        val outputFileName = "${baseName}_${System.currentTimeMillis()}.mp4"
+        val extension = inputFile.extension.lowercase().ifEmpty { "mp4" }
+        val outputFileName = "${baseName}_${System.currentTimeMillis()}.$extension"
         val outputPath = File(inputFile.parentFile, outputFileName).absolutePath
 
         viewModelScope.launch {
