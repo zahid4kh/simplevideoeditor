@@ -23,11 +23,11 @@ fun VideoPlayerComponent(
     modifier: Modifier = Modifier,
     showSurface: Boolean = true
 ) {
-    var initError by remember(videoPath) { mutableStateOf<String?>(null) }
-    val playerService = remember(videoPath) { VideoPlayerService() }
-    val mediaPlayerComponent = remember(videoPath) {
+    var initError by remember { mutableStateOf<String?>(null) }
+    val playerService = remember { VideoPlayerService() }
+    val mediaPlayerComponent = remember {
         try {
-            playerService.createPlayer(videoPath)
+            playerService.createComponent()
         } catch (e: Exception) {
             initError = "VLC not found or failed to load: ${e.message}"
             null
@@ -36,6 +36,11 @@ fun VideoPlayerComponent(
 
     LaunchedEffect(initError) {
         initError?.let { viewModel.reportError(it) }
+    }
+
+    // Loading new media whenever the path changes; no VLC teardown/reinit
+    LaunchedEffect(videoPath) {
+        playerService.loadMedia(videoPath)
     }
 
     LaunchedEffect(mediaPlayerComponent) {
@@ -68,7 +73,7 @@ fun VideoPlayerComponent(
         viewModel.seekRequest.collect { positionMs -> playerService.seekTo(positionMs) }
     }
 
-    DisposableEffect(videoPath) {
+    DisposableEffect(Unit) {
         onDispose { playerService.release() }
     }
 

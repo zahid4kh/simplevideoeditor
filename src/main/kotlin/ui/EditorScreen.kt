@@ -51,10 +51,13 @@ fun EditorScreen(
 
     val openFileChooser: () -> Unit = editorViewModel::openFileChooser
 
-    val isAnyDialogOpen = uiState.errorMessage != null ||
+    // Only in-window Compose AlertDialogs need the SwingPanel hidden (AWT airspace fix).
+    // FileChooserDialog opens as its own OS window so it naturally stacks above VLC — don't
+    // hide the surface for it, or removing the heavyweight component while VLC is rendering
+    // will block the EDT and freeze the UI.
+    val hideVideoSurface = uiState.errorMessage != null ||
         uiState.exportStatus == ExportStatus.SUCCESS ||
-        uiState.exportStatus == ExportStatus.ERROR ||
-        uiState.showFileChooser
+        uiState.exportStatus == ExportStatus.ERROR
 
     Scaffold(
         topBar = {
@@ -122,15 +125,19 @@ fun EditorScreen(
                         .background(Color.Black),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(color = Color.White)
-                    } else if (uiState.videoFile != null) {
+                    if (uiState.videoFile != null) {
+                        // Keep player surface alive during reload — removing a native AWT
+                        // heavyweight surface while VLC is rendering blocks the EDT and freezes the UI.
+                        // The old video stays visible until VLC loads the new media.
                         VideoPlayerComponent(
                             videoPath = uiState.videoFile!!.path,
                             viewModel = editorViewModel,
                             modifier = Modifier.fillMaxSize(),
-                            showSurface = !isAnyDialogOpen
+                            showSurface = !hideVideoSurface
                         )
+                    } else if (uiState.isLoading) {
+                        // First-ever load: no video mounted yet, show spinner
+                        CircularProgressIndicator(color = Color.White)
                     } else {
                         EmptyVideoState(onUpload = openFileChooser)
                     }

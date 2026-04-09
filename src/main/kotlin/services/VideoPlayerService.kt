@@ -6,13 +6,17 @@ class VideoPlayerService {
     private var mediaPlayerComponent: EmbeddedMediaPlayerComponent? = null
     private var currentUrl: String? = null
 
-    fun createPlayer(url: String): EmbeddedMediaPlayerComponent {
-        mediaPlayerComponent?.mediaPlayer()?.release()
+    fun createComponent(): EmbeddedMediaPlayerComponent {
         val component = EmbeddedMediaPlayerComponent()
         mediaPlayerComponent = component
-        currentUrl = url
-        component.mediaPlayer().media().prepare(url)
         return component
+    }
+
+    fun loadMedia(url: String) {
+        currentUrl = url
+        val player = mediaPlayerComponent?.mediaPlayer() ?: return
+        player.controls().stop()
+        player.media().prepare(url)
     }
 
     fun play() {
