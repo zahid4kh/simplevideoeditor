@@ -58,7 +58,6 @@ fun EditorScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // ── Top area: left panel + video canvas ────────────────────────────
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 LeftPanel(
                     videoFile = uiState.videoFile,
@@ -79,7 +78,6 @@ fun EditorScreen(
                     onSetTargetFps = editorViewModel::setTargetFps,
                     onToggleMute = editorViewModel::toggleMute,
                     onSelectClip = editorViewModel::selectClip,
-                    onUpdateClipPosition = editorViewModel::updateClipPosition,
                     onUpdateImageScale = editorViewModel::updateImageClipScale,
                     onUpdateTextValue = editorViewModel::updateTextClipValue,
                     onUpdateTextFontSize = editorViewModel::updateTextClipFontSize,
@@ -89,7 +87,6 @@ fun EditorScreen(
                         .fillMaxHeight()
                 )
 
-                // Resizable divider
                 Box(
                     modifier = Modifier
                         .width(8.dp)
@@ -114,7 +111,6 @@ fun EditorScreen(
                     )
                 }
 
-                // Video canvas
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -138,7 +134,6 @@ fun EditorScreen(
                 }
             }
 
-            // ── Bottom: playback controls + multi-track timeline ───────────────
             AnimatedVisibility(visible = uiState.videoFile != null && !uiState.isLoading) {
                 Column {
                     Box(
@@ -205,8 +200,6 @@ fun EditorScreen(
             }
         }
     }
-
-    // ── Dialogs ────────────────────────────────────────────────────────────────
 
     if (uiState.errorMessage != null) {
         AlertDialog(

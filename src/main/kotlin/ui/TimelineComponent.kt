@@ -390,18 +390,17 @@ private fun BoxScope.ClipBlock(
     val density = LocalDensity.current
     val handleWidthPx = with(density) { HANDLE_WIDTH.toPx() }
 
-    val startFrac = startMs.toFloat() / durationMs
-    val widthFrac = (endMs - startMs).toFloat() / durationMs
+    var localStartMs by remember(clipId) { mutableStateOf(startMs) }
+    var localEndMs by remember(clipId) { mutableStateOf(endMs) }
+
+    val startFrac = localStartMs.toFloat() / durationMs
+    val widthFrac = (localEndMs - localStartMs).toFloat() / durationMs
 
     val clipLeftPx = startFrac * trackWidthPx
     val clipWidthPx = (widthFrac * trackWidthPx).coerceAtLeast(handleWidthPx * 2 + 4f)
 
     val clipLeftDp  = with(density) { clipLeftPx.toDp() }
     val clipWidthDp = with(density) { clipWidthPx.toDp() }
-
-    val currentStartMs by rememberUpdatedState(startMs)
-    val currentEndMs by rememberUpdatedState(endMs)
-    val currentOnUpdateRange by rememberUpdatedState(onUpdateRange)
 
     Box(
         modifier = Modifier
@@ -430,10 +429,12 @@ private fun BoxScope.ClipBlock(
                         accumulatedDragMs += (dragAmount.x / trackWidthPx) * durationMs
                         val deltaMs = accumulatedDragMs.toLong()
                         if (deltaMs != 0L) {
-                            val currentDuration = currentEndMs - currentStartMs
-                            val newStart = (currentStartMs + deltaMs).coerceIn(0L, durationMs - currentDuration)
-                            val newEnd = newStart + currentDuration
-                            currentOnUpdateRange(clipId, newStart, newEnd)
+                            val duration = localEndMs - localStartMs
+                            val newStart = (localStartMs + deltaMs).coerceIn(0L, durationMs - duration)
+                            val newEnd = newStart + duration
+                            localStartMs = newStart
+                            localEndMs = newEnd
+                            onUpdateRange(clipId, newStart, newEnd)
                             accumulatedDragMs -= deltaMs
                         }
                     }
@@ -491,8 +492,9 @@ private fun BoxScope.ClipBlock(
                             accumulatedDragMs += (dragAmount.x / trackWidthPx) * durationMs
                             val deltaMs = accumulatedDragMs.toLong()
                             if (deltaMs != 0L) {
-                                val newStart = (currentStartMs + deltaMs).coerceIn(0L, currentEndMs - 1_000L)
-                                currentOnUpdateRange(clipId, newStart, currentEndMs)
+                                val newStart = (localStartMs + deltaMs).coerceIn(0L, localEndMs - 1_000L)
+                                localStartMs = newStart
+                                onUpdateRange(clipId, newStart, localEndMs)
                                 accumulatedDragMs -= deltaMs
                             }
                         }
@@ -533,8 +535,9 @@ private fun BoxScope.ClipBlock(
                             accumulatedDragMs += (dragAmount.x / trackWidthPx) * durationMs
                             val deltaMs = accumulatedDragMs.toLong()
                             if (deltaMs != 0L) {
-                                val newEnd = (currentEndMs + deltaMs).coerceIn(currentStartMs + 1_000L, durationMs)
-                                currentOnUpdateRange(clipId, currentStartMs, newEnd)
+                                val newEnd = (localEndMs + deltaMs).coerceIn(localStartMs + 1_000L, durationMs)
+                                localEndMs = newEnd
+                                onUpdateRange(clipId, localStartMs, newEnd)
                                 accumulatedDragMs -= deltaMs
                             }
                         }

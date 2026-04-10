@@ -14,18 +14,22 @@ import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import java.awt.image.BufferedImage
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import data.ImageClip
 import data.TextClip
-import data.VideoFile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import services.VideoPlayerService
@@ -132,7 +136,14 @@ fun VideoPlayerComponent(
                             .filter { uiState.currentPositionMs in it.startMs..it.endMs }
                             .forEach { clip ->
                                 key(clip.id) {
-                                    ImageClipOverlay(clip = clip, videoW = video.width, videoH = video.height, displayW = vW, displayH = vH)
+                                    ImageClipOverlay(
+                                        clip = clip,
+                                        videoW = video.width,
+                                        videoH = video.height,
+                                        displayW = vW,
+                                        displayH = vH,
+                                        viewModel = viewModel
+                                    )
                                 }
                             }
 
@@ -140,7 +151,13 @@ fun VideoPlayerComponent(
                             .filter { uiState.currentPositionMs in it.startMs..it.endMs }
                             .forEach { clip ->
                                 key(clip.id) {
-                                    TextClipOverlay(clip = clip, videoW = video.width, displayW = vW, displayH = vH)
+                                    TextClipOverlay(
+                                        clip = clip,
+                                        videoW = video.width,
+                                        displayW = vW,
+                                        displayH = vH,
+                                        viewModel = viewModel
+                                    )
                                 }
                             }
                     }
@@ -152,8 +169,16 @@ fun VideoPlayerComponent(
     }
 }
 
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
-private fun BoxScope.ImageClipOverlay(clip: ImageClip, videoW: Int, videoH: Int, displayW: Int, displayH: Int) {
+private fun BoxScope.ImageClipOverlay(
+    clip: ImageClip,
+    videoW: Int,
+    videoH: Int,
+    displayW: Int,
+    displayH: Int,
+    viewModel: VideoEditorViewModel
+) {
     val bitmap = remember(clip.imagePath) {
         runCatching {
             val file = File(clip.imagePath)
@@ -173,11 +198,16 @@ private fun BoxScope.ImageClipOverlay(clip: ImageClip, videoW: Int, videoH: Int,
         (imgW.toFloat() / bitmap.width * bitmap.height).toInt().coerceAtLeast(1)
     else imgW
 
-    val offsetX = (clip.xFraction * videoW - imgW / 2f).toInt().coerceIn(0, (videoW - imgW).coerceAtLeast(0))
-    val offsetY = (clip.yFraction * videoH - imgH / 2f).toInt().coerceIn(0, (videoH - imgH).coerceAtLeast(0))
-
     val displayScaleX = displayW.toFloat() / videoW
     val displayScaleY = displayH.toFloat() / videoH
+
+    var localXF by remember(clip.id) { mutableStateOf(clip.xFraction) }
+    var localYF by remember(clip.id) { mutableStateOf(clip.yFraction) }
+
+    val offsetX = (localXF * videoW - imgW / 2f).toInt().coerceIn(0, (videoW - imgW).coerceAtLeast(0))
+    val offsetY = (localYF * videoH - imgH / 2f).toInt().coerceIn(0, (videoH - imgH).coerceAtLeast(0))
+
+    var isHovered by remember { mutableStateOf(false) }
 
     Image(
         bitmap = bitmap,
@@ -189,12 +219,51 @@ private fun BoxScope.ImageClipOverlay(clip: ImageClip, videoW: Int, videoH: Int,
                 width = with(androidx.compose.ui.platform.LocalDensity.current) { (imgW * displayScaleX).toInt().toDp() },
                 height = with(androidx.compose.ui.platform.LocalDensity.current) { (imgH * displayScaleY).toInt().toDp() }
             )
+            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+            .pointerHoverIcon(PointerIcon.Hand)
+            .pointerInput(clip.id) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val deltaX = dragAmount.x / displayScaleX
+                    val deltaY = dragAmount.y / displayScaleY
+                    val newXF = (localXF + deltaX / videoW).coerceIn(0f, 1f)
+                    val newYF = (localYF + deltaY / videoH).coerceIn(0f, 1f)
+                    localXF = newXF
+                    localYF = newYF
+                    viewModel.updateClipPosition(clip.id, newXF, newYF)
+                }
+            }
+            .drawWithContent {
+                drawContent()
+                if (isHovered) {
+                    drawRect(
+                        color = Color.White,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = 2f,
+                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                        )
+                    )
+                }
+            }
     )
 }
 
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
-private fun TextClipOverlay(clip: TextClip, videoW: Int, displayW: Int, displayH: Int) {
+private fun TextClipOverlay(
+    clip: TextClip,
+    videoW: Int,
+    displayW: Int,
+    displayH: Int,
+    viewModel: VideoEditorViewModel
+) {
     val displayScale = displayW.toFloat() / videoW
+    var isHovered by remember { mutableStateOf(false) }
+    var contentSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+
+    var localXF by remember(clip.id) { mutableStateOf(clip.xFraction) }
+    var localYF by remember(clip.id) { mutableStateOf(clip.yFraction) }
 
     Text(
         text = clip.textValue.text.ifBlank { " " },
@@ -212,20 +281,45 @@ private fun TextClipOverlay(clip: TextClip, videoW: Int, displayW: Int, displayH
             )
         ),
         modifier = Modifier
+            .absoluteOffset {
+                IntOffset(
+                    x = (localXF * displayW - contentSize.width / 2f).toInt()
+                        .coerceIn(0, (displayW - contentSize.width).coerceAtLeast(0)),
+                    y = (localYF * displayH - contentSize.height / 2f).toInt()
+                        .coerceIn(0, (displayH - contentSize.height).coerceAtLeast(0))
+                )
+            }
             .widthIn(max = with(androidx.compose.ui.platform.LocalDensity.current) { displayW.toDp() })
-            .onSizeChanged { }
             .wrapContentSize()
+            .onSizeChanged { contentSize = it }
+            .onPointerEvent(androidx.compose.ui.input.pointer.PointerEventType.Enter) { isHovered = true }
+            .onPointerEvent(androidx.compose.ui.input.pointer.PointerEventType.Exit) { isHovered = false }
+            .pointerHoverIcon(androidx.compose.ui.input.pointer.PointerIcon.Hand)
+            .pointerInput(clip.id) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    val deltaX = dragAmount.x / displayScale
+                    val deltaY = dragAmount.y / displayScale
+                    val newXF = (localXF + deltaX / videoW).coerceIn(0f, 1f)
+
+                    val displayHOnVideoScale = videoW * (displayH.toFloat() / displayW)
+                    val newYF = (localYF + deltaY / displayHOnVideoScale).coerceIn(0f, 1f)
+
+                    localXF = newXF
+                    localYF = newYF
+                    viewModel.updateClipPosition(clip.id, newXF, newYF)
+                }
+            }
             .drawWithContent {
                 drawContent()
-            }
-            .layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                layout(displayW, displayH) {
-                    val x = (clip.xFraction * displayW - placeable.width / 2f).toInt()
-                        .coerceIn(0, displayW - placeable.width)
-                    val y = (clip.yFraction * displayH - placeable.height / 2f).toInt()
-                        .coerceIn(0, displayH - placeable.height)
-                    placeable.placeRelative(x, y)
+                if (isHovered) {
+                    drawRect(
+                        color = Color.White,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = 2f,
+                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                        )
+                    )
                 }
             }
     )

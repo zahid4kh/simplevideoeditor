@@ -53,7 +53,6 @@ fun LeftPanel(
     onSetTargetFps: (Int?) -> Unit,
     onToggleMute: () -> Unit,
     onSelectClip: (String?) -> Unit,
-    onUpdateClipPosition: (String, Float, Float) -> Unit,
     onUpdateImageScale: (String, Float) -> Unit,
     onUpdateTextValue: (String, TextFieldValue) -> Unit,
     onUpdateTextFontSize: (String, Float) -> Unit,
@@ -62,7 +61,6 @@ fun LeftPanel(
 ) {
     val scrollState = rememberScrollState()
 
-    // Resolve which clip (if any) is selected
     val selectedImageClip = imageClips.find { it.id == selectedClipId }
     val selectedTextClip  = textClips.find  { it.id == selectedClipId }
 
@@ -74,7 +72,6 @@ fun LeftPanel(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ── Upload button ──────────────────────────────────────────────────
             Button(
                 onClick = onUploadClick,
                 modifier = Modifier
@@ -104,7 +101,6 @@ fun LeftPanel(
                 return@Column
             }
 
-            // ── Clip Properties (shown when a clip is selected) ────────────────
             if (selectedClipId != null && (selectedImageClip != null || selectedTextClip != null)) {
                 HorizontalDivider()
 
@@ -129,7 +125,6 @@ fun LeftPanel(
                     }
                 }
 
-                // Text clip: editable text field
                 if (selectedTextClip != null) {
                     OutlinedTextField(
                         value = selectedTextClip.textValue,
@@ -146,7 +141,6 @@ fun LeftPanel(
                     )
                 }
 
-                // Image clip: filename info
                 if (selectedImageClip != null) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
@@ -173,26 +167,6 @@ fun LeftPanel(
                     }
                 }
 
-                // Shared: X / Y position sliders
-                val currentX = selectedImageClip?.xFraction ?: selectedTextClip!!.xFraction
-                val currentY = selectedImageClip?.yFraction ?: selectedTextClip!!.yFraction
-
-                ClipSlider(
-                    label = "Horizontal",
-                    value = currentX,
-                    valueRange = 0f..1f,
-                    displayText = "%.0f%%".format(currentX * 100),
-                    onValueChange = { onUpdateClipPosition(selectedClipId, it, currentY) }
-                )
-                ClipSlider(
-                    label = "Vertical",
-                    value = currentY,
-                    valueRange = 0f..1f,
-                    displayText = "%.0f%%".format(currentY * 100),
-                    onValueChange = { onUpdateClipPosition(selectedClipId, currentX, it) }
-                )
-
-                // Image-specific: scale
                 if (selectedImageClip != null) {
                     ClipSlider(
                         label = "Scale",
@@ -203,7 +177,6 @@ fun LeftPanel(
                     )
                 }
 
-                // Text-specific: font size
                 if (selectedTextClip != null) {
                     ClipSlider(
                         label = "Font Size",
@@ -214,7 +187,6 @@ fun LeftPanel(
                     )
                 }
 
-                // Remove button
                 OutlinedButton(
                     onClick = {
                         onRemoveClip(selectedClipId)
@@ -233,7 +205,6 @@ fun LeftPanel(
                 }
             }
 
-            // ── Video Info ─────────────────────────────────────────────────────
             HorizontalDivider()
             SectionLabel("VIDEO INFO")
             MetadataRow("File", videoFile.name)
@@ -241,7 +212,6 @@ fun LeftPanel(
             MetadataRow("Size", videoFile.formattedSize)
             MetadataRow("FPS", if (videoFile.fps > 0) "%.2f fps".format(videoFile.fps) else "—")
 
-            // ── Output FPS ─────────────────────────────────────────────────────
             HorizontalDivider()
             SectionLabel("OUTPUT FPS")
 
@@ -303,7 +273,6 @@ fun LeftPanel(
                 )
             }
 
-            // ── Edit (Trim) ────────────────────────────────────────────────────
             HorizontalDivider()
             SectionLabel("EDIT")
 
@@ -380,7 +349,6 @@ fun LeftPanel(
                 }
             }
 
-            // ── Audio ──────────────────────────────────────────────────────────
             HorizontalDivider()
             SectionLabel("AUDIO")
 
@@ -419,8 +387,6 @@ fun LeftPanel(
         )
     }
 }
-
-// ── Reusable slider row ────────────────────────────────────────────────────────
 
 @Composable
 private fun ClipSlider(
