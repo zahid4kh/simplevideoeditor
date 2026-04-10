@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import data.ImageClip
 import data.TextClip
@@ -265,20 +266,22 @@ private fun TextClipOverlay(
     var localXF by remember(clip.id) { mutableStateOf(clip.xFraction) }
     var localYF by remember(clip.id) { mutableStateOf(clip.yFraction) }
 
+    val hasBg = clip.bgColor.alpha > 0f
     Text(
         text = clip.textValue.text.ifBlank { " " },
         fontSize = (clip.fontSize * displayScale).sp,
-        color = Color.White,
+        color = clip.textColor,
         fontWeight = FontWeight.Bold,
         fontFamily = FontFamily.Monospace,
         textAlign = TextAlign.Center,
         lineHeight = (clip.fontSize * displayScale * 1.2f).sp,
         style = androidx.compose.material3.LocalTextStyle.current.copy(
-            shadow = Shadow(
+            // show drop-shadow only when there is no background box
+            shadow = if (!hasBg) Shadow(
                 color = Color.Black.copy(alpha = 0.85f),
                 offset = Offset(2f * displayScale, 2f * displayScale),
                 blurRadius = 6f * displayScale
-            )
+            ) else null
         ),
         modifier = Modifier
             .absoluteOffset {
@@ -291,6 +294,12 @@ private fun TextClipOverlay(
             }
             .widthIn(max = with(androidx.compose.ui.platform.LocalDensity.current) { displayW.toDp() })
             .wrapContentSize()
+            .then(
+                if (hasBg) Modifier
+                    .background(clip.bgColor, androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                else Modifier
+            )
             .onSizeChanged { contentSize = it }
             .onPointerEvent(androidx.compose.ui.input.pointer.PointerEventType.Enter) { isHovered = true }
             .onPointerEvent(androidx.compose.ui.input.pointer.PointerEventType.Exit) { isHovered = false }

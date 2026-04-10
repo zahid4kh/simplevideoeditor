@@ -1,5 +1,6 @@
 package viewmodel
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -204,6 +205,26 @@ class VideoEditorViewModel : ViewModel() {
             state.copy(
                 textClips = state.textClips.map {
                     if (it.id == clipId) it.copy(fontSize = fontSize.coerceIn(8f, 120f)) else it
+                }
+            )
+        }
+    }
+
+    fun updateTextClipTextColor(clipId: String, color: Color) {
+        _uiState.update { state ->
+            state.copy(
+                textClips = state.textClips.map {
+                    if (it.id == clipId) it.copy(textColor = color) else it
+                }
+            )
+        }
+    }
+
+    fun updateTextClipBgColor(clipId: String, color: Color) {
+        _uiState.update { state ->
+            state.copy(
+                textClips = state.textClips.map {
+                    if (it.id == clipId) it.copy(bgColor = color) else it
                 }
             )
         }

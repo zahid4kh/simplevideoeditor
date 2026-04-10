@@ -1,5 +1,6 @@
 package data
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.serialization.Serializable
 
@@ -59,5 +60,7 @@ data class TextClip(
     val endMs: Long,
     val xFraction: Float = 0.5f,
     val yFraction: Float = 0.5f,
-    val fontSize: Float = 36f
+    val fontSize: Float = 36f,
+    val textColor: Color = Color.White,
+    val bgColor: Color = Color.Transparent   // alpha=0 means no background box
 )

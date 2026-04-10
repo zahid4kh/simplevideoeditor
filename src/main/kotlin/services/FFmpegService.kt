@@ -1,5 +1,6 @@
 package services
 
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -71,7 +72,13 @@ class FFmpegService {
                 tempTextFile.writeText(clip.textValue.text)
                 val escapedTextPath = tempTextFile.absolutePath.replace("\\", "/").replace(":", "\\:").replace("'", "'\\\\''")
 
-                val filterParams = "textfile='$escapedTextPath':fontsize=${clip.fontSize}:fontcolor=white$fontArg:x='clip($xPos,0,w-tw)':y='clip($yPos,0,h-th)':enable='between(t,%.3f,%.3f)':box=1:boxcolor=black@0.4:boxborderw=5:line_spacing=5".format(overlayStart, overlayEnd)
+                val fontColorHex = clip.textColor.toFfmpegHex()
+                val bgAlpha = clip.bgColor.alpha
+                val bgArg = if (bgAlpha > 0f)
+                    ":box=1:boxcolor=${clip.bgColor.toFfmpegHex()}@%.2f:boxborderw=8".format(bgAlpha)
+                else ""
+
+                val filterParams = "textfile='$escapedTextPath':fontsize=${clip.fontSize}:fontcolor=$fontColorHex$fontArg:x='clip($xPos,0,w-tw)':y='clip($yPos,0,h-th)':enable='between(t,%.3f,%.3f)':line_spacing=5$bgArg".format(overlayStart, overlayEnd)
                 filterParts.add("[$lastOverlayLabel]drawtext=$filterParams[$nextLabel]")
                 lastOverlayLabel = nextLabel
             }
@@ -209,4 +216,12 @@ class FFmpegService {
             false
         }
     }
+}
+
+/** Converts a Compose Color to FFmpeg's 0xRRGGBB hex string (no alpha). */
+private fun Color.toFfmpegHex(): String {
+    val r = (red * 255).toInt().coerceIn(0, 255)
+    val g = (green * 255).toInt().coerceIn(0, 255)
+    val b = (blue * 255).toInt().coerceIn(0, 255)
+    return "0x%02X%02X%02X".format(r, g, b)
 }

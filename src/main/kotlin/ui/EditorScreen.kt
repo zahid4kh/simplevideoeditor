@@ -81,6 +81,8 @@ fun EditorScreen(
                     onUpdateImageScale = editorViewModel::updateImageClipScale,
                     onUpdateTextValue = editorViewModel::updateTextClipValue,
                     onUpdateTextFontSize = editorViewModel::updateTextClipFontSize,
+                    onUpdateTextColor = editorViewModel::updateTextClipTextColor,
+                    onUpdateTextBgColor = editorViewModel::updateTextClipBgColor,
                     onRemoveClip = editorViewModel::removeClip,
                     modifier = Modifier
                         .width(leftPanelWidthDp)

@@ -6,9 +6,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -56,6 +60,8 @@ fun LeftPanel(
     onUpdateImageScale: (String, Float) -> Unit,
     onUpdateTextValue: (String, TextFieldValue) -> Unit,
     onUpdateTextFontSize: (String, Float) -> Unit,
+    onUpdateTextColor: (String, Color) -> Unit,
+    onUpdateTextBgColor: (String, Color) -> Unit,
     onRemoveClip: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -141,6 +147,7 @@ fun LeftPanel(
                     )
                 }
 
+
                 if (selectedImageClip != null) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
@@ -185,6 +192,81 @@ fun LeftPanel(
                         displayText = "%.0fsp".format(selectedTextClip.fontSize),
                         onValueChange = { onUpdateTextFontSize(selectedTextClip.id, it) }
                     )
+
+                    // ── Text color ─────────────────────────────────────────────
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "TEXT COLOR",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            ColorSwatchRow(
+                                colors = textColorPresets,
+                                selectedColor = selectedTextClip.textColor,
+                                matchByRgb = true,
+                                onColorSelected = { onUpdateTextColor(selectedTextClip.id, it) }
+                            )
+                        }
+                    }
+
+                    // ── Background color ───────────────────────────────────────
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "BACKGROUND",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            ColorSwatchRow(
+                                colors = bgColorPresets,
+                                selectedColor = selectedTextClip.bgColor,
+                                matchByRgb = true,
+                                onColorSelected = { picked ->
+                                    // If currently transparent, bump opacity to 70% when a color is picked
+                                    val alpha = if (selectedTextClip.bgColor.alpha == 0f) 0.7f
+                                                else selectedTextClip.bgColor.alpha
+                                    onUpdateTextBgColor(selectedTextClip.id, picked.copy(alpha = alpha))
+                                }
+                            )
+                            ClipSlider(
+                                label = "Opacity",
+                                value = selectedTextClip.bgColor.alpha,
+                                valueRange = 0f..1f,
+                                displayText = if (selectedTextClip.bgColor.alpha == 0f) "None"
+                                              else "%.0f%%".format(selectedTextClip.bgColor.alpha * 100),
+                                onValueChange = { alpha ->
+                                    onUpdateTextBgColor(
+                                        selectedTextClip.id,
+                                        selectedTextClip.bgColor.copy(alpha = alpha)
+                                    )
+                                }
+                            )
+                            if (selectedTextClip.bgColor.alpha == 0f) {
+                                Text(
+                                    "Opacity 0% = no background",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 OutlinedButton(
@@ -385,6 +467,69 @@ fun LeftPanel(
                 .align(Alignment.CenterEnd)
                 .pointerHoverIcon(PointerIcon.Hand)
         )
+    }
+}
+
+// ── Color presets ──────────────────────────────────────────────────────────────
+
+private val textColorPresets = listOf(
+    Color.White,
+    Color(0xFFFFD600),   // Yellow
+    Color.Black,
+    Color(0xFFEF5350),   // Red
+    Color(0xFF00E5FF),   // Cyan
+    Color(0xFF76FF03),   // Lime
+)
+
+private val bgColorPresets = listOf(
+    Color.Black,
+    Color.White,
+    Color(0xFF1A237E),   // Dark navy
+    Color(0xFF4A148C),   // Dark purple
+    Color(0xFF1B5E20),   // Dark green
+    Color(0xFF880E4F),   // Dark pink
+)
+
+@Composable
+private fun ColorSwatchRow(
+    colors: List<Color>,
+    selectedColor: Color,
+    matchByRgb: Boolean,
+    onColorSelected: (Color) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        colors.forEach { color ->
+            val isSelected = if (matchByRgb)
+                color.red == selectedColor.red && color.green == selectedColor.green && color.blue == selectedColor.blue
+            else color == selectedColor
+
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .border(
+                        width = if (isSelected) 2.5.dp else 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                        shape = CircleShape
+                    )
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .clickable { onColorSelected(color) },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    // Checkmark — pick contrast color so it's visible on any swatch
+                    val brightness = color.red * 0.299f + color.green * 0.587f + color.blue * 0.114f
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = if (brightness > 0.5f) Color.Black else Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
     }
 }
 
