@@ -1,12 +1,14 @@
 package ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -167,6 +169,14 @@ fun TimelineComponent(
 
             Spacer(Modifier.height(8.dp))
         }
+
+        VerticalScrollbar(
+            adapter = rememberScrollbarAdapter(verticalScrollState),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxHeight()
+                .padding(end = 2.dp)
+        )
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize().zIndex(10f)) {
             val totalW = constraints.maxWidth.toFloat()
