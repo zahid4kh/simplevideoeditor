@@ -4,54 +4,33 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalScrollbarStyle
-import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.ContentCut
-import androidx.compose.material.icons.filled.FiberManualRecord
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import data.ImageClip
+import data.TextClip
 import data.VideoFile
 import ui.formatTimeMs
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,16 +43,30 @@ fun LeftPanel(
     currentPositionMs: Long,
     targetFps: Int?,
     isMuted: Boolean,
+    imageClips: List<ImageClip>,
+    textClips: List<TextClip>,
+    selectedClipId: String?,
     onUploadClick: () -> Unit,
     onToggleTrimMode: () -> Unit,
     onSetTrimStart: () -> Unit,
     onSetTrimEnd: () -> Unit,
     onSetTargetFps: (Int?) -> Unit,
     onToggleMute: () -> Unit,
+    onSelectClip: (String?) -> Unit,
+    onUpdateClipPosition: (String, Float, Float) -> Unit,
+    onUpdateImageScale: (String, Float) -> Unit,
+    onUpdateTextValue: (String, TextFieldValue) -> Unit,
+    onUpdateTextFontSize: (String, Float) -> Unit,
+    onRemoveClip: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    Box{
+
+    // Resolve which clip (if any) is selected
+    val selectedImageClip = imageClips.find { it.id == selectedClipId }
+    val selectedTextClip  = textClips.find  { it.id == selectedClipId }
+
+    Box {
         Column(
             modifier = modifier
                 .background(MaterialTheme.colorScheme.surface)
@@ -81,6 +74,7 @@ fun LeftPanel(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // ── Upload button ──────────────────────────────────────────────────
             Button(
                 onClick = onUploadClick,
                 modifier = Modifier
@@ -105,27 +99,150 @@ fun LeftPanel(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                 )
                 return@Column
             }
 
+            // ── Clip Properties (shown when a clip is selected) ────────────────
+            if (selectedClipId != null && (selectedImageClip != null || selectedTextClip != null)) {
+                HorizontalDivider()
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    SectionLabel(
+                        if (selectedImageClip != null) "IMAGE CLIP" else "TEXT CLIP"
+                    )
+                    IconButton(
+                        onClick = { onSelectClip(null) },
+                        modifier = Modifier.size(28.dp).pointerHoverIcon(PointerIcon.Hand)
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Deselect",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                        )
+                    }
+                }
+
+                // Text clip: editable text field
+                if (selectedTextClip != null) {
+                    OutlinedTextField(
+                        value = selectedTextClip.textValue,
+                        onValueChange = { onUpdateTextValue(selectedTextClip.id, it) },
+                        label = { Text("Overlay Text", style = MaterialTheme.typography.labelSmall) },
+                        modifier = Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Text),
+                        shape = RoundedCornerShape(10.dp),
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                        )
+                    )
+                }
+
+                // Image clip: filename info
+                if (selectedImageClip != null) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = Color(0xFF26A69A)
+                            )
+                            Text(
+                                text = selectedImageClip.imagePath.substringAfterLast('/'),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2
+                            )
+                        }
+                    }
+                }
+
+                // Shared: X / Y position sliders
+                val currentX = selectedImageClip?.xFraction ?: selectedTextClip!!.xFraction
+                val currentY = selectedImageClip?.yFraction ?: selectedTextClip!!.yFraction
+
+                ClipSlider(
+                    label = "Horizontal",
+                    value = currentX,
+                    valueRange = 0f..1f,
+                    displayText = "%.0f%%".format(currentX * 100),
+                    onValueChange = { onUpdateClipPosition(selectedClipId, it, currentY) }
+                )
+                ClipSlider(
+                    label = "Vertical",
+                    value = currentY,
+                    valueRange = 0f..1f,
+                    displayText = "%.0f%%".format(currentY * 100),
+                    onValueChange = { onUpdateClipPosition(selectedClipId, currentX, it) }
+                )
+
+                // Image-specific: scale
+                if (selectedImageClip != null) {
+                    ClipSlider(
+                        label = "Scale",
+                        value = selectedImageClip.scale,
+                        valueRange = 0.05f..1f,
+                        displayText = "%.0f%%".format(selectedImageClip.scale * 100),
+                        onValueChange = { onUpdateImageScale(selectedImageClip.id, it) }
+                    )
+                }
+
+                // Text-specific: font size
+                if (selectedTextClip != null) {
+                    ClipSlider(
+                        label = "Font Size",
+                        value = selectedTextClip.fontSize,
+                        valueRange = 8f..120f,
+                        displayText = "%.0fsp".format(selectedTextClip.fontSize),
+                        onValueChange = { onUpdateTextFontSize(selectedTextClip.id, it) }
+                    )
+                }
+
+                // Remove button
+                OutlinedButton(
+                    onClick = {
+                        onRemoveClip(selectedClipId)
+                        onSelectClip(null)
+                    },
+                    modifier = Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f)),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Remove Clip")
+                }
+            }
+
+            // ── Video Info ─────────────────────────────────────────────────────
             HorizontalDivider()
-
             SectionLabel("VIDEO INFO")
-
             MetadataRow("File", videoFile.name)
             MetadataRow("Duration", videoFile.formattedDuration)
             MetadataRow("Size", videoFile.formattedSize)
-            MetadataRow(
-                "FPS",
-                if (videoFile.fps > 0) "%.2f fps".format(videoFile.fps) else "—"
-            )
+            MetadataRow("FPS", if (videoFile.fps > 0) "%.2f fps".format(videoFile.fps) else "—")
 
+            // ── Output FPS ─────────────────────────────────────────────────────
             HorizontalDivider()
-
             SectionLabel("OUTPUT FPS")
 
             val presetFps = listOf(25, 30, 60)
@@ -157,31 +274,24 @@ fun LeftPanel(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text("25", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                     Text(
-                        "25",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                    Text(
-                        if (targetFps != null) "$targetFps fps" else "Source (${if (videoFile.fps > 0) "%.0f".format(videoFile.fps) else "?"})",
+                        if (targetFps != null) "$targetFps fps"
+                        else "Source (${if (videoFile.fps > 0) "%.0f".format(videoFile.fps) else "?"})",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (targetFps != null) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
-                    Text(
-                        "60",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
+                    Text("60", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                 }
                 Slider(
                     value = sliderFps,
                     onValueChange = { onSetTargetFps(it.toInt()) },
                     valueRange = 25f..60f,
                     steps = 34,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pointerHoverIcon(PointerIcon.Hand)
+                    modifier = Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand)
                 )
             }
 
@@ -193,15 +303,13 @@ fun LeftPanel(
                 )
             }
 
+            // ── Edit (Trim) ────────────────────────────────────────────────────
             HorizontalDivider()
-
             SectionLabel("EDIT")
 
             OutlinedButton(
                 onClick = onToggleTrimMode,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .pointerHoverIcon(PointerIcon.Hand),
+                modifier = Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = if (isTrimMode) MaterialTheme.colorScheme.tertiary
                     else MaterialTheme.colorScheme.onSurface
@@ -211,7 +319,7 @@ fun LeftPanel(
                     if (isTrimMode) MaterialTheme.colorScheme.tertiary
                     else MaterialTheme.colorScheme.outline
                 ),
-                shape = MaterialTheme.shapes.medium,
+                shape = MaterialTheme.shapes.medium
             ) {
                 Icon(Icons.Default.ContentCut, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(8.dp))
@@ -221,37 +329,26 @@ fun LeftPanel(
             AnimatedVisibility(visible = isTrimMode) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Drag the timeline handles or use\nthe buttons below.",
+                        "Drag the timeline handles or use the buttons below.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                     )
-
                     Surface(
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
-                        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "Start: ${formatTimeMs(trimStart)}",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "End:   ${formatTimeMs(trimEnd)}",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "Clip:  ${formatTimeMs(trimEnd - trimStart)}",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text("Start: ${formatTimeMs(trimStart)}", style = MaterialTheme.typography.labelMedium,
+                                fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("End:   ${formatTimeMs(trimEnd)}", style = MaterialTheme.typography.labelMedium,
+                                fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Clip:  ${formatTimeMs(trimEnd - trimStart)}", style = MaterialTheme.typography.labelMedium,
+                                fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.tertiary)
                         }
                     }
-
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
                             onClick = onSetTrimStart,
@@ -260,11 +357,7 @@ fun LeftPanel(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.FiberManualRecord, null, modifier = Modifier.size(12.dp))
-                                Text(
-                                    "Set\nStart",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    textAlign = TextAlign.Center
-                                )
+                                Text("Set\nStart", style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
                             }
                         }
                         OutlinedButton(
@@ -274,15 +367,10 @@ fun LeftPanel(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.FiberManualRecord, null, modifier = Modifier.size(12.dp))
-                                Text(
-                                    "Set\nEnd",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    textAlign = TextAlign.Center
-                                )
+                                Text("Set\nEnd", style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
                             }
                         }
                     }
-
                     Text(
                         "Current: ${formatTimeMs(currentPositionMs)}",
                         style = MaterialTheme.typography.labelSmall,
@@ -292,23 +380,20 @@ fun LeftPanel(
                 }
             }
 
+            // ── Audio ──────────────────────────────────────────────────────────
             HorizontalDivider()
-
             SectionLabel("AUDIO")
 
             OutlinedButton(
                 onClick = onToggleMute,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .pointerHoverIcon(PointerIcon.Hand),
+                modifier = Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = if (isMuted) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.onSurface
                 ),
                 border = BorderStroke(
                     1.dp,
-                    if (isMuted) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.outline
+                    if (isMuted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
                 ),
                 shape = MaterialTheme.shapes.medium
             ) {
@@ -333,5 +418,42 @@ fun LeftPanel(
                 .pointerHoverIcon(PointerIcon.Hand)
         )
     }
+}
 
+// ── Reusable slider row ────────────────────────────────────────────────────────
+
+@Composable
+private fun ClipSlider(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    displayText: String,
+    onValueChange: (Float) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Text(
+                displayText,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            modifier = Modifier.fillMaxWidth().pointerHoverIcon(PointerIcon.Hand)
+        )
+    }
 }
