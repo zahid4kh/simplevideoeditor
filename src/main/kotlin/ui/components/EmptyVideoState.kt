@@ -42,7 +42,7 @@ fun EmptyVideoState(onUpload: () -> Unit) {
             style = MaterialTheme.typography.titleMedium
         )
         Text(
-            "Upload an MP4 file from the left panel\nor click below to get started.",
+            "Upload an MP4 or WebM file from the left panel\nor click below to get started.",
             color = Color.White.copy(alpha = 0.35f),
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center
@@ -54,7 +54,7 @@ fun EmptyVideoState(onUpload: () -> Unit) {
         ) {
             Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(8.dp))
-            Text("Upload MP4")
+            Text("Upload MP4 / WebM")
         }
     }
 }

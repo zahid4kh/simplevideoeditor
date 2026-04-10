@@ -8,6 +8,20 @@ A lightweight, modern desktop video editor built with **Kotlin** and **Compose M
 
 ---
 
+## 📸 Screenshots
+
+|              Empty State              |    Editor with Trim Mode     |
+|:-------------------------------------:|:----------------------------:|
+| ![Empty State](media/empty-state.png) | ![Trim Mode](media/trim.png) |
+
+## 🎬 Demo
+
+<video src="https://github.com/user-attachments/assets/9e7c5b9e-a0da-40e1-982e-ed15098543fc" width="640" controls></video>
+
+<video src="https://github.com/user-attachments/assets/76c294dd-4406-470a-ab8a-346115008c1e" width="640" controls></video>
+
+---
+
 ## 🚀 Features
 
 - **🎬 Video Trimming:** Easily set start and end points using a visual timeline or precise buttons.

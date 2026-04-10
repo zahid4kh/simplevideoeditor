@@ -99,7 +99,7 @@ fun LeftPanel(
 
             if (videoFile == null) {
                 Text(
-                    "Upload an MP4 file\nto get started",
+                    "Upload an MP4 or WebM file\nto get started",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
                     textAlign = TextAlign.Center,
