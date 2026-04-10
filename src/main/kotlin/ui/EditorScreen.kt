@@ -38,7 +38,6 @@ fun EditorScreen(
     val density = LocalDensity.current
 
     val openFileChooser: () -> Unit = editorViewModel::openFileChooser
-
     val hideVideoSurface = uiState.errorMessage != null
 
     Scaffold(
@@ -57,6 +56,7 @@ fun EditorScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // ── Top area: left panel + video canvas ────────────────────────────
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 LeftPanel(
                     videoFile = uiState.videoFile,
@@ -67,17 +67,27 @@ fun EditorScreen(
                     currentPositionMs = uiState.currentPositionMs,
                     targetFps = uiState.targetFps,
                     isMuted = uiState.isMuted,
+                    imageClips = uiState.imageClips,
+                    textClips = uiState.textClips,
+                    selectedClipId = uiState.selectedClipId,
                     onUploadClick = openFileChooser,
                     onToggleTrimMode = editorViewModel::toggleTrimMode,
                     onSetTrimStart = { editorViewModel.setTrimStart(uiState.currentPositionMs) },
                     onSetTrimEnd = { editorViewModel.setTrimEnd(uiState.currentPositionMs) },
                     onSetTargetFps = editorViewModel::setTargetFps,
                     onToggleMute = editorViewModel::toggleMute,
+                    onSelectClip = editorViewModel::selectClip,
+                    onUpdateClipPosition = editorViewModel::updateClipPosition,
+                    onUpdateImageScale = editorViewModel::updateImageClipScale,
+                    onUpdateTextValue = editorViewModel::updateTextClipValue,
+                    onUpdateTextFontSize = editorViewModel::updateTextClipFontSize,
+                    onRemoveClip = editorViewModel::removeClip,
                     modifier = Modifier
                         .width(leftPanelWidthDp)
                         .fillMaxHeight()
                 )
 
+                // Resizable divider
                 Box(
                     modifier = Modifier
                         .width(8.dp)
@@ -98,10 +108,11 @@ fun EditorScreen(
                 ) {
                     VerticalDivider(
                         color = if (isDraggingDivider) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outlineVariant
+                        else MaterialTheme.colorScheme.outlineVariant
                     )
                 }
 
+                // Video canvas
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -125,6 +136,7 @@ fun EditorScreen(
                 }
             }
 
+            // ── Bottom: playback controls + multi-track timeline ───────────────
             AnimatedVisibility(visible = uiState.videoFile != null && !uiState.isLoading) {
                 Column {
                     HorizontalDivider()
@@ -142,8 +154,8 @@ fun EditorScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 120.dp, max = 320.dp)
                             .background(MaterialTheme.colorScheme.surface)
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         TimelineComponent(
                             durationMs = uiState.videoFile?.durationMs ?: 0L,
@@ -151,14 +163,24 @@ fun EditorScreen(
                             trimStart = uiState.trimStart,
                             trimEnd = uiState.trimEnd,
                             isTrimMode = uiState.isTrimMode,
+                            imageClips = uiState.imageClips,
+                            textClips = uiState.textClips,
+                            selectedClipId = uiState.selectedClipId,
                             onSeek = editorViewModel::seekTo,
-                            modifier = Modifier.fillMaxWidth()
+                            onSelectClip = editorViewModel::selectClip,
+                            onRemoveClip = editorViewModel::removeClip,
+                            onUpdateClipRange = editorViewModel::updateClipRange,
+                            onAddImage = editorViewModel::openImageChooser,
+                            onAddText = editorViewModel::addTextClip,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
             }
         }
     }
+
+    // ── Dialogs ────────────────────────────────────────────────────────────────
 
     if (uiState.errorMessage != null) {
         AlertDialog(
@@ -182,4 +204,13 @@ fun EditorScreen(
         )
     }
 
+    if (uiState.showImageChooser) {
+        FileChooserDialog(
+            title = "Select Image",
+            allowedExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp", "webp"),
+            resizableFileInfoDialog = true,
+            onFileSelected = { file -> editorViewModel.addImageClip(file.absolutePath) },
+            onCancel = editorViewModel::closeImageChooser
+        )
+    }
 }
