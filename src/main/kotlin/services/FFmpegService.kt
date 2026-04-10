@@ -27,7 +27,6 @@ class FFmpegService {
             add("-ss"); add("%.3f".format(startSecs))
             add("-i"); add(inputPath)
 
-            // Add image inputs
             imageClips.forEach { clip ->
                 add("-i"); add(clip.imagePath)
             }
@@ -91,12 +90,25 @@ class FFmpegService {
             }
 
             if (targetFps != null || filterParts.isNotEmpty()) {
-                add("-c:v"); add(if (isWebm) "libvpx-vp9" else "libx264")
-                if (muteAudio) add("-an") else {
+                if (isWebm) {
+                    add("-c:v"); add("libvpx-vp9")
+                    add("-b:v"); add("0")
+                    add("-crf"); add("33")
+                    add("-deadline"); add("good")
+                    add("-cpu-used"); add("2")
+                } else {
+                    add("-c:v"); add("libx264")
+                    add("-crf"); add("23")
+                    add("-preset"); add("medium")
+                    add("-pix_fmt"); add("yuv420p")
+                }
+                if (muteAudio) {
+                    add("-an")
+                } else {
                     if (filterParts.isEmpty()) {
                         add("-c:a"); add("copy")
                     } else {
-                        add("-c:a"); add("aac")
+                        add("-c:a"); add(if (isWebm) "libopus" else "aac")
                     }
                 }
             } else {
