@@ -52,6 +52,8 @@ compose.desktop {
 
         nativeDistributions {
 
+            modules("jdk.unsupported")
+
             jvmArgs += listOf("-Dfile.encoding=UTF-8")
             
             buildTypes.release.proguard {

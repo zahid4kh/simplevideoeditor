@@ -86,6 +86,8 @@
 # com.sun.awt.AWTUtilities — used by vlcj overlay component, not present on all JDKs
 -dontwarn com.sun.awt.**
 
+-dontwarn sun.misc.**
+
 # ============================================================
 # Deskit (file chooser dialogs)
 # ============================================================
