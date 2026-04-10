@@ -29,10 +29,36 @@ A lightweight, modern desktop video editor built with **Kotlin** and **Compose M
 - **🎬 Video Trimming:** Easily set start and end points using a visual timeline or precise buttons.
 - **⚡ FPS Control:** Change the target frame rate (FPS) for your exported video clips.
 - **📊 Metadata Extraction:** Automatically see video duration, current frame rate, and other details upon loading.
-- **📽️ Real-time Preview:** Integrated video player for scrubbing and previewing edits.
-- **🎨 Modern UI:** Sleek Material 3 design with full **Dark Mode** support.
-- **📏 Flexible Layout:** Resizable side panels and responsive components.
+- **📽️ Real-time Preview:** Native Compose rendering for video frames, enabling seamless overlays and smooth scrubbing.
+- **🖼️ Image & Text Overlays:** Add multiple image and text tracks with customizable duration, position, and scaling.
+- **🔡 Multi-line Text Support:** Advanced text rendering with wrapping and font synchronization between preview and export.
+- **🎨 Modern UI:** Sleek Material 3 design with a draggable timeline area and full **Dark Mode** support.
+- **🎞️ Precise Clipping:** Drag and resize clips directly on the timeline with sub-millisecond precision.
+- **⚙️ Advanced Export:** Powered by FFmpeg with complex filter chains for high-quality video generation including all overlays.
 - **📦 Multi-platform:** Native distributions for Windows (.msi, .exe) and Linux (.deb).
+
+---
+
+## 🏗️ Tech Stack
+
+- **UI Framework:** [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) (Desktop)
+- **Dependency Injection:** [Koin](https://insert-koin.io/)
+- **Video Playback:** [vlcj](https://github.com/caprica/vlcj) (VLC binding with custom frame capture)
+- **Video Processing:** [FFmpeg](https://ffmpeg.org/) (via CLI with complex filter mapping)
+- **Graphics Engine:** [Skia](https://skia.org/) (via Compose) for WebP and image decoding fallback
+- **State Management:** Kotlin Coroutines & Flow
+- **Components:** [Deskit](https://github.com/zahid4kh/deskit) (Material 3 Dialogs & File Choosers)
+
+---
+
+## 💡 Implementation Details
+
+A significant architectural shift in this version is the transition from displaying video in a heavy Swing `EmbeddedMediaPlayerComponent` to a custom `CallbackMediaPlayerComponent`. 
+
+- **Frame Capture:** Video frames are captured from VLC into memory as `BufferedImage`.
+- **Compose Integration:** These frames are then converted to `ImageBitmap` and rendered using the standard Compose `Image` composable.
+- **Overlays:** This enables us to use native Compose `Box` and `Text` components for overlays, ensuring they scale and move perfectly with the video frame.
+- **Consistency:** The same coordinate system is shared between the preview and the FFmpeg export process.
 
 ---
 
@@ -103,17 +129,6 @@ chmod +x gradlew
 ```bash
 ./gradlew packageDebWithWMClass
 ```
-
----
-
-## 🏗️ Tech Stack
-
-- **UI Framework:** [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) (Desktop)
-- **Dependency Injection:** [Koin](https://insert-koin.io/)
-- **Video Playback:** [vlcj](https://github.com/caprica/vlcj) (VLC binding)
-- **Video Processing:** [FFmpeg](https://ffmpeg.org/) (via CLI)
-- **State Management:** Kotlin Coroutines & Flow
-- **Components:** [Deskit](https://github.com/zahid4kh/deskit) (Material 3 Dialogs & File Choosers)
 
 ---
 
