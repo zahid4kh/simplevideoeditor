@@ -1,13 +1,65 @@
 package services
 
-import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import uk.co.caprica.vlcj.player.base.MediaPlayer
+import uk.co.caprica.vlcj.player.component.CallbackMediaPlayerComponent
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormat
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCallback
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat
+import java.awt.image.BufferedImage
+import java.awt.image.DataBufferInt
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class VideoPlayerService {
-    private var mediaPlayerComponent: EmbeddedMediaPlayerComponent? = null
+    private var mediaPlayerComponent: CallbackMediaPlayerComponent? = null
     private var currentUrl: String? = null
 
-    fun createComponent(): EmbeddedMediaPlayerComponent {
-        val component = EmbeddedMediaPlayerComponent()
+    val frameState: MutableState<ImageBitmap?> = mutableStateOf(null)
+
+    private var cachedFrame: BufferedImage? = null
+
+    private val bufferFormatCallback = object : BufferFormatCallback {
+        override fun getBufferFormat(sourceWidth: Int, sourceHeight: Int): BufferFormat {
+            cachedFrame = null
+            return RV32BufferFormat(sourceWidth, sourceHeight)
+        }
+
+        override fun allocatedBuffers(buffers: Array<out ByteBuffer>) {}
+    }
+
+    private val renderCallback = object : RenderCallback {
+        override fun display(
+            mediaPlayer: MediaPlayer,
+            nativeBuffers: Array<out ByteBuffer>,
+            bufferFormat: BufferFormat
+        ) {
+            val buffer = nativeBuffers[0]
+            val w = bufferFormat.width
+            val h = bufferFormat.height
+            if (w <= 0 || h <= 0) return
+
+            val bi = cachedFrame?.takeIf { it.width == w && it.height == h }
+                ?: BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB).also { cachedFrame = it }
+
+            val data = (bi.raster.dataBuffer as DataBufferInt).data
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
+            buffer.asIntBuffer().get(data)
+            buffer.rewind()
+
+            frameState.value = bi.toComposeImageBitmap()
+        }
+    }
+
+    fun createComponent(): CallbackMediaPlayerComponent {
+        val component = CallbackMediaPlayerComponent(
+            null, null, null, true,
+            renderCallback, bufferFormatCallback, null
+        )
         mediaPlayerComponent = component
         return component
     }
