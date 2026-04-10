@@ -6,6 +6,8 @@ A lightweight, modern desktop video editor built with **Kotlin** and **Compose M
 [![Compose](https://img.shields.io/badge/Compose-1.10.0-blue.svg?logo=jetpack-compose)](https://www.jetbrains.com/lp/compose-multiplatform/)
 [![Material 3](https://img.shields.io/badge/Material--3-latest-green.svg)](https://m3.material.io/)
 
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/zahidkh)
+
 ---
 
 ## 📸 Screenshots
