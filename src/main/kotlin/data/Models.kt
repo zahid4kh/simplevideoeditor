@@ -1,5 +1,6 @@
 package data
 
+import androidx.compose.ui.text.input.TextFieldValue
 import kotlinx.serialization.Serializable
 
 
@@ -13,7 +14,9 @@ data class VideoFile(
     val name: String,
     val durationMs: Long,
     val sizeBytes: Long,
-    val fps: Double
+    val fps: Double,
+    val width: Int = 0,
+    val height: Int = 0
 ) {
     val formattedDuration: String
         get() {
@@ -38,3 +41,23 @@ data class VideoFile(
 }
 
 enum class ExportStatus { IDLE, RUNNING, SUCCESS, ERROR }
+
+data class ImageClip(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val imagePath: String,
+    val startMs: Long,
+    val endMs: Long,
+    val xFraction: Float = 0.5f,
+    val yFraction: Float = 0.5f,
+    val scale: Float = 0.3f
+)
+
+data class TextClip(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val textValue: TextFieldValue = TextFieldValue("Text"),
+    val startMs: Long,
+    val endMs: Long,
+    val xFraction: Float = 0.5f,
+    val yFraction: Float = 0.5f,
+    val fontSize: Float = 36f
+)
