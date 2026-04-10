@@ -34,7 +34,9 @@ fun EditorScreen(
     val mainUiState by mainViewModel.uiState.collectAsState()
 
     var leftPanelWidthDp by remember { mutableStateOf(260.dp) }
+    var timelineHeightDp by remember { mutableStateOf(200.dp) }
     var isDraggingDivider by remember { mutableStateOf(false) }
+    var isDraggingHorizontalDivider by remember { mutableStateOf(false) }
     val density = LocalDensity.current
 
     val openFileChooser: () -> Unit = editorViewModel::openFileChooser
@@ -139,7 +141,31 @@ fun EditorScreen(
             // ── Bottom: playback controls + multi-track timeline ───────────────
             AnimatedVisibility(visible = uiState.videoFile != null && !uiState.isLoading) {
                 Column {
-                    HorizontalDivider()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .pointerHoverIcon(PointerIcon(Cursor(Cursor.N_RESIZE_CURSOR)))
+                            .pointerInput(Unit) {
+                                detectDragGestures(
+                                    onDragStart = { isDraggingHorizontalDivider = true },
+                                    onDragEnd = { isDraggingHorizontalDivider = false },
+                                    onDragCancel = { isDraggingHorizontalDivider = false }
+                                ) { change, dragAmount ->
+                                    change.consume()
+                                    val deltaDp = with(density) { dragAmount.y.toDp() }
+                                    timelineHeightDp = (timelineHeightDp - deltaDp).coerceIn(120.dp, 400.dp)
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        HorizontalDivider(
+                            thickness = 2.dp,
+                            color = if (isDraggingHorizontalDivider) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
+
                     PlaybackControls(
                         isPlaying = uiState.isPlaying,
                         onPlayPause = editorViewModel::togglePlayPause,
@@ -154,7 +180,7 @@ fun EditorScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 120.dp, max = 320.dp)
+                            .height(timelineHeightDp)
                             .background(MaterialTheme.colorScheme.surface)
                     ) {
                         TimelineComponent(
