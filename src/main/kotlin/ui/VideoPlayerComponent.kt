@@ -10,7 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import java.awt.image.BufferedImage
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
@@ -153,7 +155,17 @@ fun VideoPlayerComponent(
 @Composable
 private fun BoxScope.ImageClipOverlay(clip: ImageClip, videoW: Int, videoH: Int, displayW: Int, displayH: Int) {
     val bitmap = remember(clip.imagePath) {
-        runCatching { ImageIO.read(File(clip.imagePath))?.toComposeImageBitmap() }.getOrNull()
+        runCatching {
+            val file = File(clip.imagePath)
+            ImageIO.read(file)?.toComposeImageBitmap() ?: run {
+                val skiaImage = org.jetbrains.skia.Image.makeFromEncoded(file.readBytes())
+                val bitmap = org.jetbrains.skia.Bitmap()
+                bitmap.allocPixels(skiaImage.imageInfo)
+                val canvas = org.jetbrains.skia.Canvas(bitmap)
+                canvas.drawImage(skiaImage, 0f, 0f)
+                bitmap.asComposeImageBitmap()
+            }
+        }.getOrNull()
     } ?: return
 
     val imgW = (videoW * clip.scale).toInt().coerceAtLeast(1)
